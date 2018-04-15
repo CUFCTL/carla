@@ -129,7 +129,7 @@ class Benchmark(object):
                          control.steer, control.throttle, control.brake)
 
             carla.send_control(control)
-            if measurements.player_measurements.forward_speed > 1.0:
+            if measurements.player_measurements.forward_speed > 0.5:
                 start_gendata = True
 
             # measure distance to target
@@ -139,8 +139,8 @@ class Benchmark(object):
                         episode_name, name, frame))
                 with open(data_file_path, 'a') as f:
                     f.write('\n')
-                    f.write('{0} \t {1} \t {2} \t {3}'.format(
-                        control.steer, control.throttle, control.brake,
+                    f.write('{0} \t {1} \t {2} \t {3} \t {4}'.format(
+                        frame, control.steer, control.throttle, control.brake,
                         measurements.player_measurements.forward_speed))
 
             curr_x = measurements.player_measurements.transform.location.x
