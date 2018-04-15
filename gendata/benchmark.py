@@ -110,8 +110,8 @@ class Benchmark(object):
 
             control = agent.run_step(measurements, sensor_data, target)
 
-            logging.info("Controller is Inputting:")
-            logging.info('Steer = %f Throttle = %f Brake = %f ',
+            logging.debug("Controller is Inputting:")
+            logging.debug('Steer = %f Throttle = %f Brake = %f ',
                          control.steer, control.throttle, control.brake)
 
             carla.send_control(control)
@@ -132,8 +132,8 @@ class Benchmark(object):
             distance = sldist([curr_x, curr_y],
                               [target.location.x, target.location.y])
 
-            logging.info('Status:')
-            logging.info(
+            logging.debug('Status:')
+            logging.debug(
                 '[d=%f] c_x = %f, c_y = %f ---> t_x = %f, t_y = %f',
                 float(distance), curr_x, curr_y, target.location.x,
                  target.location.y)
