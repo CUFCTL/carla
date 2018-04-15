@@ -109,7 +109,12 @@ class Benchmark(object):
         distance = 10000
 
         start_gendata = False
-        with open(self._data_filename_format.format(episode_name), 'a') as f:
+
+        data_file_path = self._data_filename_format.format(episode_name)
+        data_file_dir = os.path.dirname(data_file_path)
+        if not os.path.isdir(os.path.dirname(data_file_dir)):
+            os.makedirs(data_file_dir)
+        with open(data_file_path, 'w') as f:
             f.write('steer, throttle, brake, speed')
 
         while(t1 - t0) < (time_out * 1000) and not success:
@@ -130,7 +135,7 @@ class Benchmark(object):
                 for name, image in sensor_data.items():
                     image.save_to_disk(self._image_filename_format.format(
                         episode_name, name, frame))
-                with open(self._data_filename_format.format(episode_name), 'a') as f:
+                with open(data_file_path, 'a') as f:
                     f.write('%f, %f, %f, %f'.format(
                         control.steer, control.throttle, control.brake,
                         measurements.player_measurements.forward_speed))
