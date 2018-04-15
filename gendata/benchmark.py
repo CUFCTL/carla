@@ -36,7 +36,8 @@ class Benchmark(object):
             city_name,
             name_to_save,
             continue_experiment=False,
-            save_images=False
+            save_images=False,
+            distance_for_sucess=2.0
             ):
 
 
@@ -71,6 +72,8 @@ class Benchmark(object):
                               'pos_y': -1
                               }
 
+        # The minimum distance for arriving into the goal point in order to consider ir a success
+        self._distance_for_success = distance_for_sucess
 
         self._experiments = self._build_experiments()
         # Create the log files and get the names
@@ -119,8 +122,8 @@ class Benchmark(object):
                     image.save_to_disk(self._image_filename_format.format(
                         episode_name, name, frame))
 
-            curr_x = 1e2 * measurements.player_measurements.transform.location.x
-            curr_y = 1e2 * measurements.player_measurements.transform.location.y
+            curr_x = measurements.player_measurements.transform.location.x
+            curr_y = measurements.player_measurements.transform.location.y
 
             measurement_vec.append(measurements.player_measurements)
 
@@ -135,7 +138,7 @@ class Benchmark(object):
                 float(distance), curr_x, curr_y, target.location.x,
                  target.location.y)
 
-            if distance < 200.0:
+            if distance < self._distance_for_success:
                 success = True
 
             frame += 1
