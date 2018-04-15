@@ -36,7 +36,7 @@ class Benchmark(object):
             city_name,
             name_to_save,
             continue_experiment=False,
-            save_images=False,
+            save_data=False,
             distance_for_sucess=2.0
             ):
 
@@ -83,9 +83,12 @@ class Benchmark(object):
 
 
 
-        self._save_images = save_images
+        self._save_data = save_data
         self._image_filename_format = os.path.join(
             self._full_name, '_images/episode_{:s}/{:s}/image_{:0>5d}.jpg')
+
+        self._data_filename_format = os.path.join(
+            self._full_name, '_images/episode_{:s}/data.txt')
 
     def run_navigation_episode(
             self,
@@ -105,6 +108,10 @@ class Benchmark(object):
         frame = 0
         distance = 10000
 
+        start_gendata = False
+        with open(self._data_filename_format.format(episode_name), 'a') as f:
+            f.write('steer, throttle, brake, speed')
+
         while(t1 - t0) < (time_out * 1000) and not success:
             measurements, sensor_data = carla.read_data()
 
@@ -115,12 +122,18 @@ class Benchmark(object):
                          control.steer, control.throttle, control.brake)
 
             carla.send_control(control)
+            if measurements.player_measurements.forward_speed > 2.0:
+                start_gendata = True
 
             # measure distance to target
-            if self._save_images:
+            if self._save_data and start_gendata:
                 for name, image in sensor_data.items():
                     image.save_to_disk(self._image_filename_format.format(
                         episode_name, name, frame))
+                with open(self._data_filename_format.format(episode_name), 'a') as f:
+                    f.write('%f, %f, %f, %f'.format(
+                        control.steer, control.throttle, control.brake,
+                        measurements.player_measurements.forward_speed))
 
             curr_x = measurements.player_measurements.transform.location.x
             curr_y = measurements.player_measurements.transform.location.y
