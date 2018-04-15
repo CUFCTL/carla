@@ -7,7 +7,7 @@ from CoRL_FCTL import CoRL_FCTL
 
 from carla.client import make_carla_client, VehicleControl
 from carla.tcp import TCPConnectionError
-
+import numpy as np
 
 class Manual(Agent):
     """
@@ -24,6 +24,7 @@ class Manual(Agent):
 class AutoPilot(Agent):
     def run_step(self, measurements, sensor_data, target):
         control = measurements.player_measurements.autopilot_control
+        control.steer = control.steer + np.random.triangular(-0.15, 0, 0.15)
         return control
 
 
