@@ -96,8 +96,7 @@ class CoRL_FCTL(Benchmark):
         camera.set_position(2.0, 0.0, 1.4)
         camera.set_rotation(-15.0, 0, 0)
 
-        weathers = [1, 2]
-        weathers2 = [12, 13]
+        weathers = [5, 6, 8, 9]
 
         poses_tasks = self._poses_town01()
         vehicles_tasks = [20]
