@@ -13,7 +13,9 @@ import math
 import os
 import abc
 import logging
-
+import h5py
+from PIL import Image as PImage
+import numpy as np
 
 from builtins import input as input_data
 
@@ -84,11 +86,7 @@ class Benchmark(object):
 
 
         self._save_data = save_data
-        self._image_filename_format = os.path.join(
-            self._full_name, '_images/episode_{:s}/{:s}/image_{:0>5d}.jpg')
-
-        self._data_filename_format = os.path.join(
-            self._full_name, '_images/episode_{:s}/data.txt')
+        self._data_filename_format = os.path.join(self._full_name, 'episode_{:s}.h5')
 
     def run_navigation_episode(
             self,
@@ -109,15 +107,21 @@ class Benchmark(object):
         distance = 10000
 
         start_gendata = False
-
-        data_file_path = self._data_filename_format.format(episode_name)
-        data_file_dir = os.path.dirname(data_file_path)
-        if not os.path.isdir(data_file_dir):
-            os.makedirs(data_file_dir)
+        record = 1
 
         if self._save_data:
-            with open(data_file_path, 'w') as f:
-                f.write('steer \t throttle \t brake \t speed')
+            data_file_path = self._data_filename_format.format(episode_name)
+            data_file_dir = os.path.dirname(data_file_path)
+
+            if not os.path.isdir(data_file_dir):
+                os.makedirs(data_file_dir)
+
+            if os.path.exists(data_file_path):
+                os.remove(data_file_path)
+
+            with h5py.File(data_file_path) as h5:
+                h5.create_dataset('rgb', shape=(0, 88, 200, 3), dtype='uint8', maxshape=(None, 88, 200, 3))
+                h5.create_dataset('targets', shape=(0, 5), dtype='float32', maxshape=(None, 5))
 
         while(t1 - t0) < (time_out * 1000) and not success:
             measurements, sensor_data = carla.read_data()
@@ -134,14 +138,27 @@ class Benchmark(object):
 
             # measure distance to target
             if self._save_data and start_gendata:
-                for name, image in sensor_data.items():
-                    image.save_to_disk(self._image_filename_format.format(
-                        episode_name, name, frame))
-                with open(data_file_path, 'a') as f:
-                    f.write('\n')
-                    f.write('{0} \t {1} \t {2} \t {3} \t {4}'.format(
-                        frame, control.steer, control.throttle, control.brake,
-                        measurements.player_measurements.forward_speed))
+                camera_data = sensor_data['CameraRGB']
+                image = PImage.frombytes(
+                    mode='RGBA',
+                    size=(camera_data.width, camera_data.height),
+                    data=camera_data.raw_data,
+                    decoder_name='raw')
+                color = image.split()
+                image = PImage.merge("RGB", color[2::-1])
+                image.resize((200, 150), PImage.ANTIALIAS)
+                image.crop((0, 31, 200, 119))
+                array = np.asarray(image, dtype=np.uint8)
+                target_data = np.array([
+                    frame, control.steer, control.throttle, control.brake,
+                    measurements.player_measurements.forward_speed
+                ], dtype=np.float32)
+                with h5py.File(data_file_path) as h5:
+                    h5['rgb'].reszie((record, 88, 200, 3))
+                    h5['rgb'][-1, :] = array
+                    h5['targets'].resize((record, 5))
+                    h5['targets'][-1, :] = target_data
+                record += 1
 
             curr_x = measurements.player_measurements.transform.location.x
             curr_y = measurements.player_measurements.transform.location.y
