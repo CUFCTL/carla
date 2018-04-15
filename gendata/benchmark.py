@@ -121,7 +121,7 @@ class Benchmark(object):
 
             with h5py.File(data_file_path) as h5:
                 h5.create_dataset('rgb', shape=(0, 88, 200, 3), dtype='uint8', maxshape=(None, 88, 200, 3))
-                h5.create_dataset('targets', shape=(0, 5), dtype='float32', maxshape=(None, 5))
+                h5.create_dataset('targets', shape=(0, 4), dtype='float32', maxshape=(None, 4))
 
         while(t1 - t0) < (time_out * 1000) and not success:
             measurements, sensor_data = carla.read_data()
@@ -133,7 +133,7 @@ class Benchmark(object):
                          control.steer, control.throttle, control.brake)
 
             carla.send_control(control)
-            if measurements.player_measurements.forward_speed > 0.5:
+            if measurements.player_measurements.forward_speed > 0.1:
                 start_gendata = True
 
             # measure distance to target
@@ -146,17 +146,17 @@ class Benchmark(object):
                     decoder_name='raw')
                 color = image.split()
                 image = PImage.merge("RGB", color[2::-1])
-                image.resize((200, 150), PImage.ANTIALIAS)
-                image.crop((0, 31, 200, 119))
+                image = image.resize((200, 150), PImage.ANTIALIAS)
+                image = image.crop((0, 31, 200, 119))
                 array = np.asarray(image, dtype=np.uint8)
                 target_data = np.array([
-                    frame, control.steer, control.throttle, control.brake,
+                    control.steer, control.throttle, control.brake,
                     measurements.player_measurements.forward_speed
                 ], dtype=np.float32)
                 with h5py.File(data_file_path) as h5:
-                    h5['rgb'].reszie((record, 88, 200, 3))
+                    h5['rgb'].resize((record, 88, 200, 3))
                     h5['rgb'][-1, :] = array
-                    h5['targets'].resize((record, 5))
+                    h5['targets'].resize((record, 4))
                     h5['targets'][-1, :] = target_data
                 record += 1
 
