@@ -112,10 +112,12 @@ class Benchmark(object):
 
         data_file_path = self._data_filename_format.format(episode_name)
         data_file_dir = os.path.dirname(data_file_path)
-        if not os.path.isdir(os.path.dirname(data_file_dir)):
+        if not os.path.isdir(data_file_dir):
             os.makedirs(data_file_dir)
-        with open(data_file_path, 'w') as f:
-            f.write('steer, throttle, brake, speed')
+
+        if self._save_data:
+            with open(data_file_path, 'w') as f:
+                f.write('steer \t throttle \t brake \t speed')
 
         while(t1 - t0) < (time_out * 1000) and not success:
             measurements, sensor_data = carla.read_data()
@@ -127,7 +129,7 @@ class Benchmark(object):
                          control.steer, control.throttle, control.brake)
 
             carla.send_control(control)
-            if measurements.player_measurements.forward_speed > 2.0:
+            if measurements.player_measurements.forward_speed > 1.0:
                 start_gendata = True
 
             # measure distance to target
@@ -136,7 +138,8 @@ class Benchmark(object):
                     image.save_to_disk(self._image_filename_format.format(
                         episode_name, name, frame))
                 with open(data_file_path, 'a') as f:
-                    f.write('%f, %f, %f, %f'.format(
+                    f.write('\n')
+                    f.write('{0} \t {1} \t {2} \t {3}'.format(
                         control.steer, control.throttle, control.brake,
                         measurements.player_measurements.forward_speed))
 
