@@ -6,7 +6,7 @@ import glob
 import os
 
 from conet import Net
-from dataset import genData, genBranch
+from dataset import genData
 
 # image augmentation
 import imgaug as ia
@@ -50,7 +50,7 @@ iterNum = 294000
 beta1 = 0.7
 beta2 = 0.85
 controlInputs = [2, 5, 3, 4]  # Control signal, int ( 2 Follow lane, 3 Left, 4 Right, 5 Straight)
-cBranchesOutList = ['Follow Lane', 'Go Left', 'Go Right', 'Go Straight', 'Speed Prediction Branch']
+cBranchesOutList = ['Follow Lane','Speed Prediction Branch']
 
 branchConfig = [["Steer", "Gas", "Brake"], ["Speed"]]
 params = [trainScratch, dropoutVec, image_cut, learningRate, beta1, beta2, num_images, iterNum, batchSize, valBatchSize,
@@ -75,8 +75,8 @@ batchListGenVal = []
 batchListName = []
 
 # data dir
-datasetDirTrain = './SeqTrain/'
-datasetDirVal = './SeqVal/'
+datasetDirTrain = './testdata/SeqTrain/'
+datasetDirVal = './testdata/SeqVal/'
 
 datasetFilesTrain = glob.glob(datasetDirTrain + '*.h5')
 datasetFilesVal = glob.glob(datasetDirVal + '*.h5')
@@ -92,15 +92,12 @@ for i in range(len(branchConfig)):
             batchListGenVal.append(miniBatchGen)
         else:
             # controlInputs = [2,5,3,4] # Control signal, int ( 2 Follow lane, 3 Left, 4 Right, 5 Straight)
-            miniBatchGen = genBranch(fileNames=datasetFilesTrain, branchNum=2, batchSize=batchSize)
+            miniBatchGen = genData(fileNames=datasetFilesTrain, batchSize=batchSize)
             batchListGenTrain.append(miniBatchGen)
-            miniBatchGen = genBranch(fileNames=datasetFilesVal, branchNum=2, batchSize=batchSize)
+            miniBatchGen = genData(fileNames=datasetFilesVal, batchSize=batchSize)
             batchListGenVal.append(miniBatchGen)
 
-print(next(batchListGenTrain[0]))
-# print(len(batchListGenTrain[1]))
-# print(len(batchListGenVal[0]))
-exit()
+
 
 with sessGraph.as_default():
     sess = tf.Session(graph=sessGraph, config=config)
@@ -156,21 +153,21 @@ with sessGraph.as_default():
                     contLoss = netTensors['output']['losses'][i]  # lossList[i]
 
                     inputData = []
-                    inputData.append(sess.run(tf.one_hot(ys[:, 24], 4)))  # Command Control
-                    inputData.append(ys[:, 10].reshape([120, 1]))  # Speed
+                    #inputData.append(sess.run(tf.one_hot(ys[:, 1], 4)))  # Command Control
+                    inputData.append(ys[:, 3].reshape([120, 1]))  # Speed
 
+                   
                     # [ inputs['inputImages','inputData'], targets['targetSpeed', 'targetController'],  'params', dropoutVec', output[optimizers, losses, branchesOutputs] ]
                     feedDict = {netTensors['inputs'][0]: xs, netTensors['inputs'][1][0]: inputData[0],
-                                netTensors['inputs'][1][1]: inputData[1], netTensors['dropoutVec']: dropoutVec,
-                                netTensors['targets'][0]: ys[:, 10].reshape([120, 1]),
+                                 netTensors['dropoutVec']: dropoutVec,
+                                netTensors['targets'][0]: ys[:, 3].reshape([120, 1]),
                                 netTensors['targets'][1]: ys[:, 0:3]}
                     _, loss_value = sess.run([contSolver, contLoss], feed_dict=feedDict)
 
                     # write logs at every iteration
                     feedDict = {netTensors['inputs'][0]: xs, netTensors['inputs'][1][0]: inputData[0],
-                                netTensors['inputs'][1][1]: inputData[1],
                                 netTensors['dropoutVec']: [1] * len(dropoutVec),
-                                netTensors['targets'][0]: ys[:, 10].reshape([120, 1]),
+                                netTensors['targets'][0]: ys[:, 3].reshape([120, 1]),
                                 netTensors['targets'][1]: ys[:, 0:3]}
                     summary = merged_summary_op.eval(feed_dict=feedDict)
                     summary_writer.add_summary(summary, epoch * num_images / batchSize + j)
@@ -183,9 +180,8 @@ with sessGraph.as_default():
                         xs, ys = next(batchListGenVal[i])
                         contLoss = netTensors['output']['losses'][i]
                         feedDict = {netTensors['inputs'][0]: xs, netTensors['inputs'][1][0]: inputData[0],
-                                    netTensors['inputs'][1][1]: inputData[1],
                                     netTensors['dropoutVec']: [1] * len(dropoutVec),
-                                    netTensors['targets'][0]: ys[:, 10].reshape([120, 1]),
+                                    netTensors['targets'][0]: ys[:, 3].reshape([120, 1]),
                                     netTensors['targets'][1]: ys[:, 0:3]}
                         loss_value = contLoss.eval(feed_dict=feedDict)
                         print("  Val::: Epoch: %d, Step: %d, TotalSteps: %d, Loss: %g" % (

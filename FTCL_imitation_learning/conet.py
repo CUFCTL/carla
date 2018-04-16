@@ -36,7 +36,7 @@ def controlNet(inputs, targets, shape, dropoutVec, branchConfig, params, scopeNa
                         # create a summary to monitor cost tensor
                         tf.summary.scalar("Speed_Loss", contLoss)
                     else:
-                        contLoss = tf.reduce_mean(tf.square(tf.subtract(networkTensor[i], targets[
+                        contLoss = tf.reduce_mean(tf.square(tf.subtract(networkTensor[0], targets[
                             1])))  # + tf.add_n([tf.nn.l2_loss(v) for v in trainVars]) * L2NormConst
                         contSolver = tf.train.AdamOptimizer(learning_rate=params[3], beta1=params[4],
                                                             beta2=params[5]).minimize(contLoss)
@@ -57,7 +57,7 @@ def Net(branchConfig, params, timeNumberFrames, prefSize=(128, 160, 3)):
     inputImages = tf.placeholder("float", shape=[None, prefSize[0], prefSize[1], prefSize[2]], name="input_image")
     inputData = []
 
-    inputData.append(tf.placeholder(tf.float32, shape=[None, 4], name="input_control"))
+    #inputData.append(tf.placeholder(tf.float32, shape=[None, 4], name="input_control"))
 
     inputData.append(tf.placeholder(tf.float32, shape=[None, 1], name="input_speed"))
 

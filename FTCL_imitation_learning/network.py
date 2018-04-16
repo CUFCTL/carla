@@ -163,7 +163,7 @@ def load_imitation_learning_network(input_image, input_data, input_size, dropout
 
     """ Speed (measurements)"""
     with tf.name_scope("Speed"):
-        speed = input_data[1]  # get the speed from input data
+        speed = input_data[0]  # get the speed from input data
         speed = network_manager.fc_block(speed, 128)
         speed = network_manager.fc_block(speed, 128)
 
