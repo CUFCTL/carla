@@ -2,6 +2,7 @@ from __future__ import print_function
 import numpy as np
 import tensorflow as tf
 
+
 def weight_ones(shape, name):
     initial = tf.constant(1.0, shape=shape, name=name)
     return tf.Variable(initial)
@@ -51,9 +52,10 @@ class Network(object):
         self._conv_kernels.append(kernel_size)
         self._conv_strides.append(stride)
 
-        conv_res = tf.add(tf.nn.conv2d(x, weights, [1, stride, stride, 1], padding=padding_in,
-                                       name='conv2d_' + str(self._count_conv)), bias,
-                          name='add_' + str(self._count_conv))
+        conv_res = tf.add(tf.nn.conv2d(
+            x, weights, [1, stride, stride, 1], padding=padding_in,
+            name='conv2d_' + str(self._count_conv)), bias,
+            name='add_' + str(self._count_conv))
 
         self._features['conv_block' + str(self._count_conv - 1)] = conv_res
 
@@ -74,7 +76,7 @@ class Network(object):
         return tf.nn.relu(x, name='relu' + str(self._count_activations))
 
     def dropout(self, x):
-        print ("Dropout", self._count_dropouts)
+        print("Dropout", self._count_dropouts)
         self._count_dropouts += 1
         output = tf.nn.dropout(x, self._dropout_vec[self._count_dropouts - 1],
                                name='dropout' + str(self._count_dropouts))
@@ -92,7 +94,7 @@ class Network(object):
         return tf.nn.xw_plus_b(x, weights, bias, name='fc_' + str(self._count_fc))
 
     def conv_block(self, x, kernel_size, stride, output_size, padding_in='SAME'):
-        print (" === Conv", self._count_conv, "  :  ", kernel_size, stride, output_size)
+        print(" === Conv", self._count_conv, "  :  ", kernel_size, stride, output_size)
         with tf.name_scope("conv_block" + str(self._count_conv)):
             x = self.conv(x, kernel_size, stride, output_size, padding_in=padding_in)
             x = self.bn(x)
@@ -101,7 +103,7 @@ class Network(object):
             return self.activation(x)
 
     def fc_block(self, x, output_size):
-        print (" === FC", self._count_fc, "  :  ", output_size)
+        print(" === FC", self._count_fc, "  :  ", output_size)
         with tf.name_scope("fc" + str(self._count_fc + 1)):
             x = self.fc(x, output_size)
             x = self.dropout(x)
@@ -115,11 +117,6 @@ class Network(object):
         return self._features
 
 
-
-
-
-
-
 def load_imitation_learning_network(input_image, input_data, input_size, dropout):
     branches = []
 
@@ -129,36 +126,36 @@ def load_imitation_learning_network(input_image, input_data, input_size, dropout
 
     """conv1"""  # kernel sz, stride, num feature maps
     xc = network_manager.conv_block(x, 5, 2, 32, padding_in='VALID')
-    print (xc)
+    print(xc)
     xc = network_manager.conv_block(xc, 3, 1, 32, padding_in='VALID')
-    print (xc)
+    print(xc)
 
     """conv2"""
     xc = network_manager.conv_block(xc, 3, 2, 64, padding_in='VALID')
-    print (xc)
+    print(xc)
     xc = network_manager.conv_block(xc, 3, 1, 64, padding_in='VALID')
-    print (xc)
+    print(xc)
 
     """conv3"""
     xc = network_manager.conv_block(xc, 3, 2, 128, padding_in='VALID')
-    print (xc)
+    print(xc)
     xc = network_manager.conv_block(xc, 3, 1, 128, padding_in='VALID')
-    print (xc)
+    print(xc)
 
     """conv4"""
     xc = network_manager.conv_block(xc, 3, 1, 256, padding_in='VALID')
-    print (xc)
+    print(xc)
     xc = network_manager.conv_block(xc, 3, 1, 256, padding_in='VALID')
-    print (xc)
+    print(xc)
     """mp3 (default values)"""
 
     """ reshape """
     x = tf.reshape(xc, [-1, int(np.prod(xc.get_shape()[1:]))], name='reshape')
-    print (x)
+    print(x)
 
     """ fc1 """
     x = network_manager.fc_block(x, 512)
-    print (x)
+    print(x)
     """ fc2 """
     x = network_manager.fc_block(x, 512)
 
@@ -175,7 +172,7 @@ def load_imitation_learning_network(input_image, input_data, input_size, dropout
     j = network_manager.fc_block(j, 512)
 
     """Start BRANCHING"""
-    branch_config = [["Steer", "Gas", "Brake"],["Speed"]]
+    branch_config = [["Steer", "Gas", "Brake"], ["Speed"]]
 
     for i in range(0, len(branch_config)):
         with tf.name_scope("Branch_" + str(i)):
@@ -189,10 +186,6 @@ def load_imitation_learning_network(input_image, input_data, input_size, dropout
 
             branches.append(network_manager.fc(branch_output, len(branch_config[i])))
 
-        print (branch_output)
+        print(branch_output)
 
     return branches
-
-
-
-
