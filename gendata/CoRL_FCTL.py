@@ -16,6 +16,8 @@ from carla.sensor import Camera
 from carla.settings import CarlaSettings
 
 from metrics import compute_summary
+import numpy.random as random
+import datetime
 
 
 class CoRL_FCTL(Benchmark):
@@ -75,9 +77,22 @@ class CoRL_FCTL(Benchmark):
         def _poses_straight():
             return [[36, 40], [39, 35], [110, 114], [7, 3], [0, 4],
                     [61, 59], [33, 87], [80, 76], [45, 49], [84, 34],
-                    [78, 70]]
+                    [78, 70], [48, 35], [99, 31], [104, 82], [83, 101],
+                    [67, 77]]
 
         return [_poses_straight()]
+
+    def _poses_town02(self):
+
+        def _poses_straight():
+            return [[4, 2], [12, 14], [62, 57], [45, 52], [80, 7],
+                    [64, 66], [78, 76], [59, 57], [61, 40], [35, 39],
+                    [12, 14], [73, 68], [45, 49], [54, 63], [51, 46],
+                    [77, 79], [53, 46], [57, 82], [1, 56], [70, 66],
+                    [44, 0], [52, 77], [78, 53]]
+
+        return [_poses_straight()]
+
 
     def _build_experiments(self):
         """
@@ -96,11 +111,16 @@ class CoRL_FCTL(Benchmark):
         camera.set_position(2.0, 0.0, 1.4)
         camera.set_rotation(-15.0, 0, 0)
 
-        weathers = [5, 6, 8, 9]
-
-        poses_tasks = self._poses_town01()
-        vehicles_tasks = [20]
-        pedestrians_tasks = [50]
+        if self._city_name == 'Town01':
+            weathers = [5, 6]
+            poses_tasks = self._poses_town01()
+            vehicles_tasks = [20]
+            pedestrians_tasks = [50]
+        else:
+            weathers = [8, 9]
+            poses_tasks = self._poses_town02()
+            vehicles_tasks = [15]
+            pedestrians_tasks = [50]
 
         experiments_vector = []
 
@@ -118,8 +138,8 @@ class CoRL_FCTL(Benchmark):
                     NumberOfVehicles=vehicles,
                     NumberOfPedestrians=pedestrians,
                     WeatherId=weather,
-                    SeedVehicles=123456789,
-                    SeedPedestrians=123456789
+                    SeedVehicles=random.random_integers(100000000, 999999999),
+                    SeedPedestrians=random.random_integers(100000000, 999999999)
                 )
                 # Add all the cameras that were set for this experiments
 
@@ -139,7 +159,7 @@ class CoRL_FCTL(Benchmark):
     def _get_details(self):
 
         # Function to get automatic information from the experiment for writing purposes
-        return 'corl2017_' + self._city_name
+        return datetime.datetime.now().strftime("%Y%m%d%H%M") + '_' + self._city_name
 
     def _get_pose_and_task(self, line_on_file):
         """

@@ -61,8 +61,15 @@ if __name__ == '__main__':
     argparser.add_argument(
         '-n', '--log_name',
         metavar='T',
-        default='test',
+        default='gendata',
         help='The name of the log file to be created by the benchmark'
+        )
+    argparser.add_argument(
+        '-t', '--times',
+        metavar='COUNT',
+        default=1,
+        type=int,
+        help='Times to gen datasets (default: 1)'
         )
 
     args = argparser.parse_args()
@@ -77,17 +84,15 @@ if __name__ == '__main__':
 
     logging.info('listening to server %s:%s', args.host, args.port)
 
-    while True:
-        try:
-            with make_carla_client(args.host, args.port) as client:
-                corl = CoRL_FCTL(city_name=args.city_name, name_to_save=args.log_name, save_data=True)
-                agent = AutoPilot(args.city_name)
-                results = corl.benchmark_agent(agent, client)
-                corl.plot_summary_test()
-                corl.plot_summary_train()
+    for t in range(0, args.times):
+        while True:
+            try:
+                with make_carla_client(args.host, args.port) as client:
+                    corl = CoRL_FCTL(city_name=args.city_name, name_to_save=args.log_name, save_data=True)
+                    agent = AutoPilot(args.city_name)
+                    results = corl.benchmark_agent(agent, client)
+                    break
 
-                break
-
-        except TCPConnectionError as error:
-            logging.error(error)
-            time.sleep(1)
+            except TCPConnectionError as error:
+                logging.error(error)
+                time.sleep(1)
