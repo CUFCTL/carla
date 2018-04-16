@@ -137,8 +137,8 @@ class CoRL_FCTL(Benchmark):
                     NumberOfVehicles=vehicles,
                     NumberOfPedestrians=pedestrians,
                     WeatherId=weather,
-                    SeedVehicles=random.random_integers(100000000, 999999999),
-                    SeedPedestrians=random.random_integers(100000000, 999999999)
+                    SeedVehicles=random.randint(100000000, 999999999),
+                    SeedPedestrians=random.randint(100000000, 999999999)
                 )
                 # Add all the cameras that were set for this experiments
 
