@@ -1,3 +1,6 @@
 .idea/
 *.pyc
+dataset/
+FTCL_imitation_learning/log/
+gendata/_benchmarks_results/
 
