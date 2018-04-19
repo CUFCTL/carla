@@ -75,8 +75,8 @@ batchListGenVal = []
 batchListName = []
 
 # data dir
-datasetDirTrain = './testdata/SeqTrain/'
-datasetDirVal = './testdata/SeqVal/'
+datasetDirTrain = './dataset/SeqTrain/'
+datasetDirVal = './dataset/SeqVal/'
 
 datasetFilesTrain = glob.glob(datasetDirTrain + '*.h5')
 datasetFilesVal = glob.glob(datasetDirVal + '*.h5')
