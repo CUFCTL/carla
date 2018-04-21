@@ -212,7 +212,7 @@ with sessGraph.as_default():
 
                                 params[3] = params[3] * 0.5  # update Learning Rate
                                 contLoss = tf.reduce_mean(tf.square(
-                                    tf.subtract(netTensors['output']['branchesOutputs'][-1], netTensors['targets'][
+                                    tf.subtract(netTensors['output']['output'][1], netTensors['targets'][
                                         0])))  # + tf.add_n([tf.nn.l2_loss(v) for v in trainVars]) * L2NormConst
                                 contSolver = tf.train.AdamOptimizer(learning_rate=params[3], beta1=params[4],
                                                                     beta2=params[5]).minimize(contLoss)
@@ -224,7 +224,7 @@ with sessGraph.as_default():
                                 # if not (j == 0):
                                 params[3] = params[3] * 0.5
                                 contLoss = tf.reduce_mean(tf.square(
-                                    tf.subtract(netTensors['output']['branchesOutputs'][i], netTensors['targets'][
+                                    tf.subtract(netTensors['output']['output'][0], netTensors['targets'][
                                         1])))  # + tf.add_n([tf.nn.l2_loss(v) for v in trainVars]) * L2NormConst
                                 contSolver = tf.train.AdamOptimizer(learning_rate=params[3], beta1=params[4],
                                                                     beta2=params[5]).minimize(contLoss)
