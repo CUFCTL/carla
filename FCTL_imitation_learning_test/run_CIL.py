@@ -2,7 +2,7 @@ import argparse
 import logging
 import sys
 
-from carla.benchmarks.corl_2017 import CoRL2017
+from CoRL_FCTL import CoRL_FCTL
 
 from carla.tcp import TCPConnectionError
 from carla.client import make_carla_client
@@ -73,11 +73,9 @@ if (__name__ == '__main__'):
         try:
 
             with make_carla_client(args.host, args.port) as client:
-                corl = CoRL2017(args.city_name, args.log_name, continue_experiment=args.continue_experiment)
+                corl = CoRL_FCTL(args.city_name, args.log_name, continue_experiment=args.continue_experiment)
                 results = corl.benchmark_agent(agent, client)
                 corl.plot_summary_test()
-                corl.plot_summary_train()
-
                 break
 
         except TCPConnectionError as error:
