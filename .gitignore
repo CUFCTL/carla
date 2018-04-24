@@ -1,8 +1,7 @@
 .idea/
 *.pyc
 dataset/
-FTCL_imitation_learning/logs/
 gendata/_benchmarks_results/
 gendata/data/
-FTCL_imitation_learning/test/
-
+FCTL_imitation_learning_train/logs/
+FCTL_imitation_learning_train/test/
