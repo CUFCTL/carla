@@ -28,51 +28,40 @@ seq = iaa.Sequential([
     # rl(iaa.Grayscale((0.0, 1))), # put grayscale
 ], random_order=True)
 
+
+
 # parameters
 timeNumberFrames = 1  # 4 # number of frames in each samples
 batchSize = 120  # size of batch
 valBatchSize = 120  # size of batch for validation set
-NseqVal = 5  # number of sequences to use for validation
-# training parameters
 epochs = 100
-samplesPerEpoch = 500
-L2NormConst = 0.001
 trainScratch = True
 
 # Configurations
-num_images = 657800  # 200 * 3289
+num_images = 657800
+itername = 80000
 memory_fraction = 0.25
 image_cut = [115, 510]
-dropoutVec = [1.0] * 8 + [0.7] * 2 + [0.5] * 2 + [0.5] * 1 + [0.5, 1.] * 5
+dropoutVec = [1.0] * 8 + [0.7] * 2 + [0.5] * 2 + [0.5] * 1 + [0.5, 1.] * 2
 prefSize = _image_size = (88, 200, 3)
-learningRate = 0.0002  # multiplied by 0.5 every 50000 mini batch
-iterNum = 294000
+learningRate = 0.0002  
 beta1 = 0.7
 beta2 = 0.85
-controlInputs = [2, 5, 3, 4]  # Control signal, int ( 2 Follow lane, 3 Left, 4 Right, 5 Straight)
-cBranchesOutList = ['Follow Lane','Speed Prediction Branch']
-
 branchConfig = [["Steer", "Gas", "Brake"], ["Speed"]]
-params = [trainScratch, dropoutVec, image_cut, learningRate, beta1, beta2, num_images, iterNum, batchSize, valBatchSize,
-          NseqVal, epochs, samplesPerEpoch, L2NormConst]
+params = [trainScratch, dropoutVec, image_cut, learningRate, beta1, beta2]
 
 # GPU configuration
 config = tf.ConfigProto(allow_soft_placement=True)
 config.gpu_options.visible_device_list = '0'
 config.gpu_options.per_process_gpu_memory_fraction = memory_fraction
-
 # use many gpus
 config = tf.ConfigProto(allow_soft_placement=True)
+
+
 
 tf.reset_default_graph()
 sessGraph = tf.Graph()
 
-# Prepare data generators
-batchListGenTrain = []
-
-batchListGenVal = []
-
-batchListName = []
 
 # data dir
 datasetDirTrain = './dataset/SeqTrain/'
@@ -81,21 +70,10 @@ datasetDirVal = './dataset/SeqVal/'
 datasetFilesTrain = glob.glob(datasetDirTrain + '*.h5')
 datasetFilesVal = glob.glob(datasetDirVal + '*.h5')
 
-for i in range(len(branchConfig)):
 
-    with tf.name_scope("Branch_" + str(i)):
+batchListGenTrain = genData(fileNames=datasetFilesTrain, batchSize=batchSize)
 
-        if branchConfig[i][0] == "Speed":
-            miniBatchGen = genData(fileNames=datasetFilesTrain, batchSize=batchSize)
-            batchListGenTrain.append(miniBatchGen)
-            miniBatchGen = genData(fileNames=datasetFilesVal, batchSize=batchSize)
-            batchListGenVal.append(miniBatchGen)
-        else:
-            # controlInputs = [2,5,3,4] # Control signal, int ( 2 Follow lane, 3 Left, 4 Right, 5 Straight)
-            miniBatchGen = genData(fileNames=datasetFilesTrain, batchSize=batchSize)
-            batchListGenTrain.append(miniBatchGen)
-            miniBatchGen = genData(fileNames=datasetFilesVal, batchSize=batchSize)
-            batchListGenVal.append(miniBatchGen)
+batchListGenVal = genData(fileNames=datasetFilesVal, batchSize=batchSize)
 
 
 
@@ -106,14 +84,7 @@ with sessGraph.as_default():
         # build model
         print('Building Net ...')
         netTensors = Net(branchConfig, params, timeNumberFrames, prefSize)
-        # [ inputs['inputImages','inputData'],
-        #  targets['targetSpeed', 'targetController'],  
-        #  'params', 
-        #   dropoutVec, 
-        #   output[optimizers, losses, branchesOutputs] 
-        # ]
-
-        # print(netTensors['output'])
+      
 
         print('Initialize Variables in the Graph ...')
         sess.run(tf.global_variables_initializer())  # initialize variables
@@ -142,50 +113,45 @@ with sessGraph.as_default():
 
                 steps += 1
 
-                for i in range(0, len(branchConfig)):
+                xs, ys = next(batchListGenTrain)
 
-                    xs, ys = next(batchListGenTrain[i])
+                # augment images
+                xs = seq.augment_images(xs)
 
-                    # augment images
-                    xs = seq.augment_images(xs)
+                contSolver = netTensors['output']['optimizers']  # solverList[i]
+                contLoss = netTensors['output']['losses']  # lossList[i]
 
-                    contSolver = netTensors['output']['optimizers'][i]  # solverList[i]
-                    contLoss = netTensors['output']['losses'][i]  # lossList[i]
+                
+                inputData = ys[:, 3].reshape([120, 1])  # Speed
 
-                    inputData = []
-                    #inputData.append(sess.run(tf.one_hot(ys[:, 1], 4)))  # Command Control
-                    inputData.append(ys[:, 3].reshape([120, 1]))  # Speed
+               
+                feedDict = {netTensors['inputs'][0]: xs, netTensors['inputs'][1]: inputData,
+                             netTensors['dropoutVec']: dropoutVec,
+                            netTensors['targets'][0]: ys[:, 3].reshape([120, 1]),
+                            netTensors['targets'][1]: ys[:, 0:3]}
+                _, loss_value = sess.run([contSolver, contLoss], feed_dict=feedDict)
 
-                   
-                    # [ inputs['inputImages','inputData'], targets['targetSpeed', 'targetController'],  'params', dropoutVec', output[optimizers, losses, branchesOutputs] ]
-                    feedDict = {netTensors['inputs'][0]: xs, netTensors['inputs'][1][0]: inputData[0],
-                                 netTensors['dropoutVec']: dropoutVec,
-                                netTensors['targets'][0]: ys[:, 3].reshape([120, 1]),
-                                netTensors['targets'][1]: ys[:, 0:3]}
-                    _, loss_value = sess.run([contSolver, contLoss], feed_dict=feedDict)
+                # write logs at every iteration
+                feedDict = {netTensors['inputs'][0]: xs, netTensors['inputs'][1]: inputData,
+                            netTensors['dropoutVec']: [1] * len(dropoutVec),
+                            netTensors['targets'][0]: ys[:, 3].reshape([120, 1]),
+                            netTensors['targets'][1]: ys[:, 0:3]}
+                summary = merged_summary_op.eval(feed_dict=feedDict)
+                summary_writer.add_summary(summary, epoch * num_images / batchSize + j)
 
-                    # write logs at every iteration
-                    feedDict = {netTensors['inputs'][0]: xs, netTensors['inputs'][1][0]: inputData[0],
+                print(' Train::: Epoch: %d, Step: %d, TotalSteps: %d, Loss: %g' % (epoch, epoch * batchSize + j, steps, loss_value))
+
+                if steps % 10 == 0:
+                    # clear_output(wait=True)netTensors
+                    xs, ys = next(batchListGenVal)
+                    contLoss = netTensors['output']['losses']
+                    feedDict = {netTensors['inputs'][0]: xs, netTensors['inputs'][1]: inputData,
                                 netTensors['dropoutVec']: [1] * len(dropoutVec),
                                 netTensors['targets'][0]: ys[:, 3].reshape([120, 1]),
                                 netTensors['targets'][1]: ys[:, 0:3]}
-                    summary = merged_summary_op.eval(feed_dict=feedDict)
-                    summary_writer.add_summary(summary, epoch * num_images / batchSize + j)
+                    loss_value = contLoss.eval(feed_dict=feedDict)
+                    print("  Val::: Epoch: %d, Step: %d, TotalSteps: %d, Loss: %g" % (epoch, epoch * batchSize + j, steps, loss_value))
 
-                    print("  Train::: Epoch: %d, Step: %d, TotalSteps: %d, Loss: %g" % (
-                    epoch, epoch * batchSize + j, steps, loss_value), cBranchesOutList[i])
-
-                    if steps % 10 == 0:
-                        # clear_output(wait=True)netTensors
-                        xs, ys = next(batchListGenVal[i])
-                        contLoss = netTensors['output']['losses'][i]
-                        feedDict = {netTensors['inputs'][0]: xs, netTensors['inputs'][1][0]: inputData[0],
-                                    netTensors['dropoutVec']: [1] * len(dropoutVec),
-                                    netTensors['targets'][0]: ys[:, 3].reshape([120, 1]),
-                                    netTensors['targets'][1]: ys[:, 0:3]}
-                        loss_value = contLoss.eval(feed_dict=feedDict)
-                        print("  Val::: Epoch: %d, Step: %d, TotalSteps: %d, Loss: %g" % (
-                        epoch, epoch * batchSize + j, steps, loss_value), cBranchesOutList[i])
 
                 if steps % 10 == 0:
                     clear_output(wait=True)
@@ -198,53 +164,13 @@ with sessGraph.as_default():
                     filename = saver.save(sess, checkpoint_path)
                     print("  Model saved in file: %s" % filename)
 
-                if steps % 50000 == 0 and steps != 0:  # every 50000 step, multiply learning rate by half
-                    print("Half the learning rate ....")
-                    solverList = []
-                    lossList = []
-                    trainVars = tf.trainable_variables()
-                    for i in range(0, len(branchConfig)):
-                        with tf.name_scope("Branch_" + str(i)):
-                            if branchConfig[i][0] == "Speed":
-                                # we only use the image as input to speed prediction
-                                # if not (j == 0):
-                                # [ inputs['inputImages','inputData'], targets['targetSpeed', 'targetController'],  'params', dropoutVec', output[optimizers, losses, branchesOutputs] ]
 
-                                params[3] = params[3] * 0.5  # update Learning Rate
-                                contLoss = tf.reduce_mean(tf.square(
-                                    tf.subtract(netTensors['output']['output'][1], netTensors['targets'][
-                                        0])))  # + tf.add_n([tf.nn.l2_loss(v) for v in trainVars]) * L2NormConst
-                                contSolver = tf.train.AdamOptimizer(learning_rate=params[3], beta1=params[4],
-                                                                    beta2=params[5]).minimize(contLoss)
-                                solverList.append(contSolver)
-                                lossList.append(contLoss)
-                                # create a summary to monitor cost tensor
-                                tf.summary.scalar("Speed_Loss", contLoss)
-                            else:
-                                # if not (j == 0):
-                                params[3] = params[3] * 0.5
-                                contLoss = tf.reduce_mean(tf.square(
-                                    tf.subtract(netTensors['output']['output'][0], netTensors['targets'][
-                                        1])))  # + tf.add_n([tf.nn.l2_loss(v) for v in trainVars]) * L2NormConst
-                                contSolver = tf.train.AdamOptimizer(learning_rate=params[3], beta1=params[4],
-                                                                    beta2=params[5]).minimize(contLoss)
-                                solverList.append(contSolver)
-                                lossList.append(contLoss)
-                                tf.summary.scalar("Control_Loss_Branch_" + str(i), contLoss)
-
-                    # update new Losses and Optimizers 
-                    print('Initialize Variables in the Graph ...')
-                    # merge all summaries into a single op
-                    merged_summary_op = tf.summary.merge_all()
-                    sess.run(tf.global_variables_initializer())
-                    saver.restore(sess, "test/model.ckpt")  # restore trained parameters
-
-                if steps % 294000 == 0 and steps != 0:
+                if steps % itername == 0 and steps != 0:
                     # finish the training
                     break
 
             # finish all saved the models
-            if steps % 294000 == 0 and steps != 0:
+            if steps % itername == 0 and steps != 0:
                 # finish the training
                 print('Finalize the training and Save Checkpoint ...')
                 if not os.path.exists(modelPath):
@@ -254,5 +180,5 @@ with sessGraph.as_default():
                 print("  Model saved in file: %s" % filename)
                 break
 
-            tStopEpoch = time.time()
-            print("  Epoch Time Cost:", round(tStopEpoch - tStartEpoch, 2), "s")
+        tStopEpoch = time.time()
+        print("  Epoch Time Cost:", round(tStopEpoch - tStartEpoch, 2), "s")

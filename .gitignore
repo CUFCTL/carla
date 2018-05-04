@@ -5,5 +5,6 @@ gendata/_benchmarks_results/
 gendata/data/
 FCTL_imitation_learning_train/logs/
 FCTL_imitation_learning_train/test/
+FCTL_imitation_learning_test/_benchmarks_results/
 FCTL_imitation_learning_test/agents/imitation/model/
 

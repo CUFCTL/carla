@@ -117,75 +117,79 @@ class Network(object):
         return self._features
 
 
-def load_imitation_learning_network(input_image, input_data, input_size, dropout):
+def load_imitation_learning_network(input_image, input_data, input_size, dropout,scopeName1,scopeName2):
     branches = []
 
     x = input_image
 
     network_manager = Network(dropout, tf.shape(x))
 
-    """conv1"""  # kernel sz, stride, num feature maps
-    xc = network_manager.conv_block(x, 5, 2, 32, padding_in='VALID')
-    print(xc)
-    xc = network_manager.conv_block(xc, 3, 1, 32, padding_in='VALID')
-    print(xc)
+    with tf.variable_scope(scopeName1) as scope:
+        """conv1"""  # kernel sz, stride, num feature maps
+        xc = network_manager.conv_block(x, 5, 2, 32, padding_in='VALID')
+        print(xc)
+        xc = network_manager.conv_block(xc, 3, 1, 32, padding_in='VALID')
+        print(xc)
 
-    """conv2"""
-    xc = network_manager.conv_block(xc, 3, 2, 64, padding_in='VALID')
-    print(xc)
-    xc = network_manager.conv_block(xc, 3, 1, 64, padding_in='VALID')
-    print(xc)
+        """conv2"""
+        xc = network_manager.conv_block(xc, 3, 2, 64, padding_in='VALID')
+        print(xc)
+        xc = network_manager.conv_block(xc, 3, 1, 64, padding_in='VALID')
+        print(xc)
 
-    """conv3"""
-    xc = network_manager.conv_block(xc, 3, 2, 128, padding_in='VALID')
-    print(xc)
-    xc = network_manager.conv_block(xc, 3, 1, 128, padding_in='VALID')
-    print(xc)
+        """conv3"""
+        xc = network_manager.conv_block(xc, 3, 2, 128, padding_in='VALID')
+        print(xc)
+        xc = network_manager.conv_block(xc, 3, 1, 128, padding_in='VALID')
+        print(xc)
 
-    """conv4"""
-    xc = network_manager.conv_block(xc, 3, 1, 256, padding_in='VALID')
-    print(xc)
-    xc = network_manager.conv_block(xc, 3, 1, 256, padding_in='VALID')
-    print(xc)
-    """mp3 (default values)"""
+        """conv4"""
+        xc = network_manager.conv_block(xc, 3, 1, 256, padding_in='VALID')
+        print(xc)
+        xc = network_manager.conv_block(xc, 3, 1, 256, padding_in='VALID')
+        print(xc)
+        """mp3 (default values)"""
 
-    """ reshape """
-    x = tf.reshape(xc, [-1, int(np.prod(xc.get_shape()[1:]))], name='reshape')
-    print(x)
+        """ reshape """
+        x = tf.reshape(xc, [-1, int(np.prod(xc.get_shape()[1:]))], name='reshape')
+        print(x)
 
-    """ fc1 """
-    x = network_manager.fc_block(x, 512)
-    print(x)
-    """ fc2 """
-    x = network_manager.fc_block(x, 512)
+        """ fc1 """
+        x = network_manager.fc_block(x, 512)
+        print(x)
+        """ fc2 """
+        x = network_manager.fc_block(x, 512)
+    
 
-    """Process Control"""
 
-    """ Speed (measurements)"""
-    with tf.name_scope("Speed"):
-        speed = input_data[0]  # get the speed from input data
-        speed = network_manager.fc_block(speed, 128)
-        speed = network_manager.fc_block(speed, 128)
+    with tf.variable_scope(scopeName2) as scope:
 
-    """ Joint sensory """
-    j = tf.concat([x, speed], 1)
-    j = network_manager.fc_block(j, 512)
+        """ Speed (measurements)"""
+        with tf.name_scope("Speed"):
+            speed = input_data  # get the speed from input data
+            speed = network_manager.fc_block(speed, 128)
+            speed = network_manager.fc_block(speed, 128)
+    
 
-    """Start BRANCHING"""
-    branch_config = [["Steer", "Gas", "Brake"], ["Speed"]]
+        """ Joint sensory """
+        j = tf.concat([x, speed], 1)
+        j = network_manager.fc_block(j, 512)
 
-    for i in range(0, len(branch_config)):
-        with tf.name_scope("Branch_" + str(i)):
-            if branch_config[i][0] == "Speed":
-                # we only use the image as input to speed prediction
-                branch_output = network_manager.fc_block(x, 256)
-                branch_output = network_manager.fc_block(branch_output, 256)
-            else:
-                branch_output = network_manager.fc_block(j, 256)
-                branch_output = network_manager.fc_block(branch_output, 256)
+        """Start BRANCHING"""
+        branch_config = [["Steer", "Gas", "Brake"], ["Speed"]]
 
-            branches.append(network_manager.fc(branch_output, len(branch_config[i])))
+        for i in range(0, len(branch_config)):
+            with tf.name_scope("Branch_" + str(i)):
+                if branch_config[i][0] == "Speed":
+                    # we only use the image as input to speed prediction
+                    branch_output = network_manager.fc_block(x, 256)
+                    branch_output = network_manager.fc_block(branch_output, 256)
+                else:
+                    branch_output = network_manager.fc_block(j, 256)
+                    branch_output = network_manager.fc_block(branch_output, 256)
 
-        print(branch_output)
+                branches.append(network_manager.fc(branch_output, len(branch_config[i])))
+
+            print(branch_output)
 
     return branches
