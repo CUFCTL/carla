@@ -90,7 +90,7 @@ if __name__ == '__main__':
                 with make_carla_client(args.host, args.port) as client:
                     corl = CoRL_FCTL(city_name=args.city_name, name_to_save=args.log_name, save_data=True)
                     agent = AutoPilot(args.city_name)
-                    results = corl.benchmark_agent(agent, client)
+                    corl.benchmark_agent(agent, client)
                     break
 
             except TCPConnectionError as error:

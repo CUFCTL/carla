@@ -114,12 +114,12 @@ class CoRL_FCTL(Benchmark):
             weathers = [5, 6]
             poses_tasks = self._poses_town01()
             vehicles_tasks = [20]
-            pedestrians_tasks = [50]
+            pedestrians_tasks = [0]
         else:
             weathers = [8, 9]
             poses_tasks = self._poses_town02()
             vehicles_tasks = [15]
-            pedestrians_tasks = [50]
+            pedestrians_tasks = [0]
 
         experiments_vector = []
 

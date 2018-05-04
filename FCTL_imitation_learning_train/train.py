@@ -117,22 +117,23 @@ with sessGraph.as_default():
 
                 # augment images
                 xs = seq.augment_images(xs)
+                xs = xs.astype(np.float32)
+                xs = np.multiply(xs, 1.0/255.0)
 
                 contSolver = netTensors['output']['optimizers']  # solverList[i]
                 contLoss = netTensors['output']['losses']  # lossList[i]
-
                 
-                inputData = ys[:, 3].reshape([120, 1])  # Speed
-
+                train_speed = ys[:, 3].reshape([120, 1])  # Speed
+                train_speed = np.multiply(train_speed, 1.0/25.0)  # normalize Speed
                
-                feedDict = {netTensors['inputs'][0]: xs, netTensors['inputs'][1]: inputData,
+                feedDict = {netTensors['inputs'][0]: xs, netTensors['inputs'][1]: train_speed,
                              netTensors['dropoutVec']: dropoutVec,
                             netTensors['targets'][0]: ys[:, 3].reshape([120, 1]),
                             netTensors['targets'][1]: ys[:, 0:3]}
                 _, loss_value = sess.run([contSolver, contLoss], feed_dict=feedDict)
 
                 # write logs at every iteration
-                feedDict = {netTensors['inputs'][0]: xs, netTensors['inputs'][1]: inputData,
+                feedDict = {netTensors['inputs'][0]: xs, netTensors['inputs'][1]: train_speed,
                             netTensors['dropoutVec']: [1] * len(dropoutVec),
                             netTensors['targets'][0]: ys[:, 3].reshape([120, 1]),
                             netTensors['targets'][1]: ys[:, 0:3]}
@@ -144,8 +145,15 @@ with sessGraph.as_default():
                 if steps % 10 == 0:
                     # clear_output(wait=True)netTensors
                     xs, ys = next(batchListGenVal)
+
+                    xs = xs.astype(np.float32)
+                    xs = np.multiply(xs, 1.0 / 255.0)
+
+                    val_speed = ys[:, 3].reshape([120, 1])
+                    val_speed = np.multiply(val_speed, 1.0 / 25.0)  # normalize Speed
+
                     contLoss = netTensors['output']['losses']
-                    feedDict = {netTensors['inputs'][0]: xs, netTensors['inputs'][1]: inputData,
+                    feedDict = {netTensors['inputs'][0]: xs, netTensors['inputs'][1]: val_speed,
                                 netTensors['dropoutVec']: [1] * len(dropoutVec),
                                 netTensors['targets'][0]: ys[:, 3].reshape([120, 1]),
                                 netTensors['targets'][1]: ys[:, 0:3]}

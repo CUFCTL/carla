@@ -16,6 +16,7 @@ import logging
 import h5py
 from PIL import Image as PImage
 import numpy as np
+import scipy.misc
 
 from builtins import input as input_data
 
@@ -145,10 +146,12 @@ class Benchmark(object):
                     data=camera_data.raw_data,
                     decoder_name='raw')
                 color = image.split()
-                image = PImage.merge("RGB", color[2::-1])
-                image = image.resize((200, 150), PImage.ANTIALIAS)
-                image = image.crop((0, 31, 200, 119))
-                array = np.asarray(image, dtype=np.uint8)
+
+                array = np.asarray(PImage.merge("RGB", color[2::-1]), dtype=np.uint8)
+                # Crop images
+                array = array[115:510, :]
+                array = scipy.misc.imresize(array, [88, 200])
+
                 target_data = np.array([
                     control.steer, control.throttle, control.brake,
                     measurements.player_measurements.forward_speed
@@ -252,7 +255,6 @@ class Benchmark(object):
                               final_time)
                     else:
                         logging.info('----- Timeout! -----')
-        return self.get_all_statistics()
 
     def _write_summary_results(self, experiment, pose, rep,
                                path_distance, remaining_distance,
