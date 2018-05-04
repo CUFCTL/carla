@@ -52,7 +52,7 @@ class ImitationLearning(Agent):
         import os
         dir_path = os.path.dirname(__file__)
 
-        self._models_path = dir_path + '/model/test_00/'
+        self._models_path = dir_path + '/model/test/'
 
         # tf.reset_default_graph()
         self._sess.run(tf.global_variables_initializer())
