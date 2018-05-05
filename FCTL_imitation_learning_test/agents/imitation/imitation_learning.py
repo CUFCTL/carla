@@ -45,8 +45,7 @@ class ImitationLearning(Agent):
             self._dout = tf.placeholder("float", shape=[len(self.dropout_vec)])
 
         with tf.variable_scope(scopeName) as scope:
-            with tf.name_scope("Network"):
-                self._network_tensor = load_imitation_learning_network(self._input_images, self._input_data,
+            self._network_tensor = load_imitation_learning_network(self._input_images, self._input_data,
                                                                    self._image_size, self._dout,scopeName1,scopeName2)
 
         import os

@@ -16,33 +16,33 @@ def controlNet(inputs, targets, shape, dropoutVec, branchConfig, params, scopeNa
         scopeName: TensorFlow Scope Name to separate nets in the graph
     """
     with tf.variable_scope(scopeName) as scope:
-        with tf.name_scope("Network"):
+        # with tf.name_scope("Network"):
 
-            networkTensor = load_imitation_learning_network(inputs[0], inputs[1],
-                                                            shape[1:3], dropoutVec,scopeName1,scopeName2)
+        networkTensor = load_imitation_learning_network(inputs[0], inputs[1],
+                                                        shape[1:3], dropoutVec,scopeName1,scopeName2)
 
-            trainVars = tf.trainable_variables()
+        trainVars = tf.trainable_variables()
 
-            for i in range(0, len(branchConfig)):
-                with tf.name_scope("Branch_" + str(i)):
-                    if branchConfig[i][0] == "Speed":
-                        # we only use the image as input to speed prediction
-                        SpeedLoss = tf.reduce_mean(tf.square(tf.subtract(networkTensor[1], targets[0]))) 
-                        # create a summary to monitor cost tensor
-                        tf.summary.scalar("Speed_Loss", SpeedLoss)
-                    else:
-                        steer_loss = tf.reduce_mean(tf.square(tf.subtract(networkTensor[0][:,0], targets[1][:,0])))
-                        gas_loss = tf.reduce_mean(tf.square(tf.subtract(networkTensor[0][:,1], targets[1][:,1])))
-                        brake_loss = tf.reduce_mean(tf.square(tf.subtract(networkTensor[0][:,2], targets[1][:,2])))
+        for i in range(0, len(branchConfig)):
+            with tf.name_scope("Branch_" + str(i)):
+                if branchConfig[i][0] == "Speed":
+                    # we only use the image as input to speed prediction
+                    SpeedLoss = tf.reduce_mean(tf.square(tf.subtract(networkTensor[1], targets[0]))) 
+                    # create a summary to monitor cost tensor
+                    tf.summary.scalar("Speed_Loss", SpeedLoss)
+                else:
+                    steer_loss = tf.reduce_mean(tf.square(tf.subtract(networkTensor[0][:,0], targets[1][:,0])))
+                    gas_loss = tf.reduce_mean(tf.square(tf.subtract(networkTensor[0][:,1], targets[1][:,1])))
+                    brake_loss = tf.reduce_mean(tf.square(tf.subtract(networkTensor[0][:,2], targets[1][:,2])))
 
-                        CtrLoss = 0.45 * steer_loss + 0.45 * gas_loss + 0.05 * brake_loss
-                        tf.summary.scalar("Control_Loss_Branch_" + str(i), CtrLoss)
-                        
+                    CtrLoss = 0.45 * steer_loss + 0.45 * gas_loss + 0.05 * brake_loss
+                    tf.summary.scalar("Control_Loss_Branch_" + str(i), CtrLoss)
+                    
 
-            loss = 0.05 * SpeedLoss + 0.95 * CtrLoss
-            tf.summary.scalar('total loss', loss)
-            contSolver = tf.train.AdamOptimizer(learning_rate=params[3], beta1=params[4],
-                                                beta2=params[5]).minimize(loss)
+        loss = 0.05 * SpeedLoss + 0.95 * CtrLoss
+        tf.summary.scalar('total loss', loss)
+        contSolver = tf.train.AdamOptimizer(learning_rate=params[3], beta1=params[4],
+                                            beta2=params[5]).minimize(loss)
 
                     
         tensors = {
