@@ -140,7 +140,7 @@ with sessGraph.as_default():
                 summary = merged_summary_op.eval(feed_dict=feedDict)
                 summary_writer.add_summary(summary, epoch * num_images / batchSize + j)
 
-                print(' Train::: Epoch: %d, Step: %d, TotalSteps: %d, Loss: %g' % (epoch, epoch * batchSize + j, steps, loss_value))
+                print(' Train::: Epoch: %d, Step: %d, TotalSteps: %d, Loss: %g' % (epoch, j, steps, loss_value))
 
                 if steps % 10 == 0:
                     # clear_output(wait=True)netTensors
@@ -158,7 +158,7 @@ with sessGraph.as_default():
                                 netTensors['targets'][0]: ys[:, 3].reshape([120, 1]),
                                 netTensors['targets'][1]: ys[:, 0:3]}
                     loss_value = contLoss.eval(feed_dict=feedDict)
-                    print("  Val::: Epoch: %d, Step: %d, TotalSteps: %d, Loss: %g" % (epoch, epoch * batchSize + j, steps, loss_value))
+                    print("  Val::: Epoch: %d, Step: %d, TotalSteps: %d, Loss: %g" % (epoch, j, steps, loss_value))
 
 
                 if steps % 10 == 0:
