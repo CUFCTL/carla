@@ -1,6 +1,0 @@
-a=1
-for i in $(find . -name '*.h5' | sort); do
-  new=$(printf "Town02_%04d.h5" "$a")
-  mv -i -- "$i" "$new"
-  let a=a+1
-done

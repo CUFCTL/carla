@@ -19,7 +19,7 @@ from carla.tcp import TCPConnectionError
 
 from . import results_printer
 from .recording import Recording
-
+from . import hdf5gen
 
 def sldist(c1, c2):
     return math.sqrt((c2[0] - c1[0]) ** 2 + (c2[1] - c1[1]) ** 2)
@@ -41,7 +41,8 @@ class DrivingBenchmark(object):
             name_to_save='Test',
             continue_experiment=False,
             save_images=False,
-            distance_for_success=2.0
+            distance_for_success=2.0,
+            gendata=False
     ):
 
         self.__metaclass__ = abc.ABCMeta
@@ -59,6 +60,7 @@ class DrivingBenchmark(object):
 
         # We have a default planner instantiated that produces high level commands
         self._planner = Planner(city_name)
+        self._gendata = gendata
 
     def benchmark_agent(self, experiment_suite, agent, client):
         """
@@ -217,6 +219,8 @@ class DrivingBenchmark(object):
         distance = 10000
         success = False
 
+        h5gen = hdf5gen.HDF5Gen(experiment_path=self._recording.path, episode_name=episode_name, boolgenh5=self._gendata)
+
         while (current_timestamp - initial_timestamp) < (time_out * 1000) and not success:
 
             # Read data from server with the client
@@ -230,6 +234,9 @@ class DrivingBenchmark(object):
 
             # save images if the flag is activated
             self._recording.save_images(sensor_data, episode_name, frame)
+
+            # save data if the flag is activated
+            h5gen.save_data(measurements, sensor_data, control)
 
             current_x = measurements.player_measurements.transform.location.x
             current_y = measurements.player_measurements.transform.location.y
@@ -269,7 +276,8 @@ def run_driving_benchmark(agent,
                           log_name='Test',
                           continue_experiment=False,
                           host='127.0.0.1',
-                          port=2000
+                          port=2000,
+                          gendata=False
                           ):
     while True:
         try:
@@ -287,7 +295,8 @@ def run_driving_benchmark(agent,
                                              name_to_save=log_name + '_'
                                                           + type(experiment_suite).__name__
                                                           + '_' + city_name,
-                                             continue_experiment=continue_experiment)
+                                             continue_experiment=continue_experiment,
+                                             gendata=gendata)
                 # This function performs the benchmark. It returns a dictionary summarizing
                 # the entire execution.
 

@@ -1,5 +1,6 @@
 .idea/
 *.pyc
+gendata_old/
 dataset/
 gendata/_benchmarks_results/
 gendata/data/

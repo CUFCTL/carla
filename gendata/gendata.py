@@ -1,32 +1,18 @@
+#!/usr/bin/env python3
+
+# Copyright (c) 2017 Computer Vision Center (CVC) at the Universitat Autonoma de
+# Barcelona (UAB).
+#
+# This work is licensed under the terms of the MIT license.
+# For a copy, see <https://opensource.org/licenses/MIT>.
+
 import argparse
 import logging
-import time
 
-from agent import Agent
-from CoRL_FCTL import CoRL_FCTL
-
-from carla.client import make_carla_client, VehicleControl
-from carla.tcp import TCPConnectionError
-import numpy as np
-
-class Manual(Agent):
-    """
-    Sample redefinition of the Agent,
-    An agent that goes straight
-    """
-    def run_step(self, measurements, sensor_data, target):
-        control = VehicleControl()
-        control.throttle = 0.9
-
-        return control
-
-
-class AutoPilot(Agent):
-    def run_step(self, measurements, sensor_data, target):
-        control = measurements.player_measurements.autopilot_control
-        control.steer = control.steer + np.random.triangular(-0.15, 0, 0.15)
-        return control
-
+from carla.driving_benchmark import run_driving_benchmark
+from carla.driving_benchmark.experiment_suites.fctl_2018 import Fctl2018
+from carla.agent.auto_pilot_agent050 import AutoPilotAgent050
+from carla.agent.auto_pilot_agent025 import AutoPilotAgent025
 
 if __name__ == '__main__':
 
@@ -54,23 +40,33 @@ if __name__ == '__main__':
         help='TCP port to listen to (default: 2000)')
     argparser.add_argument(
         '-c', '--city-name',
-        metavar='C',
+           metavar='C',
         default='Town01',
         help='The town that is going to be used on benchmark'
-        + '(needs to match active town in server, options: Town01 or Town02)')
+             + '(needs to match active town in server, options: Town01 or Town02)')
     argparser.add_argument(
         '-n', '--log_name',
         metavar='T',
-        default='gendata',
+        default='test',
         help='The name of the log file to be created by the benchmark'
-        )
+    )
     argparser.add_argument(
-        '-t', '--times',
-        metavar='COUNT',
-        default=1,
-        type=int,
-        help='Times to gen datasets (default: 1)'
-        )
+        '-hn',
+        action='store_true',
+        default=False,
+        help='High Noise Mode'
+    )
+    argparser.add_argument(
+        '-gd',
+        action='store_true',
+        default=False,
+        help='Generate Data'
+    )
+    argparser.add_argument(
+        '--continue-experiment',
+        action='store_true',
+        help='If you want to continue the experiment with the same name'
+    )
 
     args = argparser.parse_args()
     if args.debug:
@@ -81,18 +77,16 @@ if __name__ == '__main__':
         log_level = logging.WARNING
 
     logging.basicConfig(format='%(levelname)s: %(message)s', level=log_level)
-
     logging.info('listening to server %s:%s', args.host, args.port)
 
-    for t in range(0, args.times):
-        while True:
-            try:
-                with make_carla_client(args.host, args.port) as client:
-                    corl = CoRL_FCTL(city_name=args.city_name, name_to_save=args.log_name, save_data=True)
-                    agent = AutoPilot(args.city_name)
-                    corl.benchmark_agent(agent, client)
-                    break
+    if args.hn:
+        agent = AutoPilotAgent050()
+    else:
+        agent = AutoPilotAgent025()
 
-            except TCPConnectionError as error:
-                logging.error(error)
-                time.sleep(1)
+    experiment_suite = Fctl2018(args.city_name)
+
+    # Now actually run the driving_benchmark
+    run_driving_benchmark(agent, experiment_suite, args.city_name,
+                          args.log_name, args.continue_experiment,
+                          args.host, args.port, args.gd)
