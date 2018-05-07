@@ -4,6 +4,7 @@ from IPython.display import clear_output
 import time
 import glob
 import os
+import h5py
 
 from conet import Net
 from dataset import genData
@@ -34,12 +35,24 @@ seq = iaa.Sequential([
 timeNumberFrames = 1  # 4 # number of frames in each samples
 batchSize = 120  # size of batch
 valBatchSize = 120  # size of batch for validation set
-epochs = 100
+epochs = 1000
 trainScratch = True
 
+# data dir
+datasetDirTrain = './dataset/SeqTrain/'
+datasetDirVal = './dataset/SeqVal/'
+
+datasetFilesTrain = glob.glob(datasetDirTrain + '*.h5')
+datasetFilesVal = glob.glob(datasetDirVal + '*.h5')
+
+trainCount = 0
+for trainH5Name in datasetFilesTrain:
+    data = h5py.File(trainH5Name, 'r')
+    trainCount += data['rgb'].shape[0]
+
 # Configurations
-num_images = 657800
-itername = 300000
+num_images = trainCount
+itername = 100000
 memory_fraction = 0.25
 image_cut = [115, 510]
 dropoutVec = [1.0] * 8 + [0.7] * 2 + [0.5] * 2 + [0.5] * 1 + [0.5, 1.] * 2
@@ -61,15 +74,6 @@ config = tf.ConfigProto(allow_soft_placement=True)
 
 tf.reset_default_graph()
 sessGraph = tf.Graph()
-
-
-# data dir
-datasetDirTrain = './dataset/SeqTrain/'
-datasetDirVal = './dataset/SeqVal/'
-
-datasetFilesTrain = glob.glob(datasetDirTrain + '*.h5')
-datasetFilesVal = glob.glob(datasetDirVal + '*.h5')
-
 
 batchListGenTrain = genData(fileNames=datasetFilesTrain, batchSize=batchSize)
 
