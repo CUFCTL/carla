@@ -9,17 +9,20 @@ import numpy as np
 
 slim = tf.contrib.slim
 
-from carla.benchmarks.agent import Agent
+from carla.agent import Agent
 from carla.carla_server_pb2 import Control
-
 from agents.imitation.imitation_learning_network import load_imitation_learning_network
 
 
 class ImitationLearning(Agent):
 
-    def __init__(self, city_name, avoid_stopping, memory_fraction=0.25, image_cut=[115, 510], scopeName='NET',scopeName1='First',scopeName2='Second'):
+    def __init__(self, city_name, avoid_stopping, memory_fraction=0.25, image_cut=[115, 510]):
 
-        Agent.__init__(self, city_name)
+        Agent.__init__(self)
+
+        scopeName = 'NET'
+        scopeName1 = 'First'
+        scopeName2 = 'Second'
 
         self.dropout_vec = [1.0] * 8 + [0.7] * 2 + [0.5] * 2 + [0.5] * 1 + [0.5, 1.] * 2
 
@@ -78,7 +81,7 @@ class ImitationLearning(Agent):
 
         return ckpt
 
-    def run_step(self, measurements, sensor_data, target):
+    def run_step(self, measurements, sensor_data, directions, target):
 
         control = self._compute_action(sensor_data['CameraRGB'].data,
                                        measurements.player_measurements.forward_speed)
@@ -106,7 +109,7 @@ class ImitationLearning(Agent):
             brake = 0.0
 
         # We limit speed to 35 km/h to avoid
-        if speed > 9.7 and brake == 0.0:
+        if speed > 10.0 and brake == 0.0:
             acc = 0.0
 
         control = Control()
@@ -129,7 +132,7 @@ class ImitationLearning(Agent):
         image_input = image_input.reshape((1, self._image_size[0], self._image_size[1], self._image_size[2]))
 
         # Normalize with the maximum speed from the training set ( 90 km/h)
-        speed = np.array(speed)
+        speed = np.array(speed / 25.0)
 
         speed = speed.reshape((1, 1))
 
@@ -148,17 +151,17 @@ class ImitationLearning(Agent):
         if self._avoid_stopping:
             predicted_speed = sess.run(branches[1], feed_dict=feedDict)
             predicted_speed = predicted_speed[0][0]
-            real_speed = speed
+            real_speed = speed * 25.0
 
-            real_predicted = predicted_speed
-            if real_speed < 1.389 and real_predicted >1.667 :
-                # If (Car Stooped) and ( It should not have stopped, use the speed prediction branch for that
+            real_predicted = predicted_speed * 25.0
+            if real_speed < 2.0 and real_predicted > 3.0:
+                # If (Car Stooped) and
+                #  ( It should not have stopped, use the speed prediction branch for that)
 
-                predicted_acc = 1 * (20.0 / 90.0 - speed) + predicted_acc
+                predicted_acc = 1 * (5.6 / 25.0 - speed) + predicted_acc
 
                 predicted_brake = 0.0
 
                 predicted_acc = predicted_acc[0][0]
-
 
         return predicted_steers, predicted_acc, predicted_brake

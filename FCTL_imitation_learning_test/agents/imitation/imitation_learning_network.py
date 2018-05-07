@@ -126,7 +126,7 @@ def load_imitation_learning_network(input_image, input_data, input_size, dropout
     network_manager = Network(dropout, tf.shape(x))
 
     with tf.variable_scope(scopeName1) as scope:
-    
+        """conv1"""  # kernel sz, stride, num feature maps
         xc = network_manager.conv_block(x, 5, 2, 32, padding_in='VALID')
         print(xc)
         xc = network_manager.conv_block(xc, 3, 1, 32, padding_in='VALID')
@@ -161,10 +161,9 @@ def load_imitation_learning_network(input_image, input_data, input_size, dropout
         """ fc2 """
         x = network_manager.fc_block(x, 512)
 
-
+    """Process Control"""
     with tf.variable_scope(scopeName2) as scope:
-
-    
+        """ Speed (measurements)"""
         with tf.name_scope("Speed"):
             speed = input_data  # get the speed from input data
             speed = network_manager.fc_block(speed, 128)
