@@ -6,7 +6,7 @@ from carla.settings import CarlaSettings
 from carla.driving_benchmark.experiment_suites.experiment_suite import ExperimentSuite
 
 
-class Fctl2018(ExperimentSuite):
+class Fctl2018T(ExperimentSuite):
 
     @property
     def train_weathers(self):
@@ -33,7 +33,7 @@ class Fctl2018(ExperimentSuite):
         def _poses_one_curve():
             return [[48, 35], [99, 31], [104, 82], [83, 101], [67, 77]]
 
-        return [_poses_straight()] * 10
+        return [_poses_one_curve()] * 10
 
     def _poses_town02(self):
 
@@ -44,7 +44,7 @@ class Fctl2018(ExperimentSuite):
         def _poses_one_curve():
             return [[57, 82], [1, 56], [70, 66], [44, 0], [52, 77], [78, 53]]
 
-        return [_poses_straight()] * 10
+        return [_poses_one_curve()] * 10
 
     def build_experiments(self):
         """
