@@ -3,7 +3,7 @@ import logging
 
 from carla.driving_benchmark import run_driving_benchmark
 from carla.driving_benchmark.experiment_suites.fctl_2018 import Fctl2018
-
+from carla.driving_benchmark.experiment_suites.fctl_2018_t import Fctl2018T
 from agents.imitation.imitation_learning import ImitationLearning
 
 try:
