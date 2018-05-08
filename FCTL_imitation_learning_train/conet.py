@@ -18,7 +18,7 @@ def controlNet(inputs, targets, shape, dropoutVec, branchConfig, params, scopeNa
     with tf.variable_scope(scopeName) as scope:
         # with tf.name_scope("Network"):
 
-        networkTensor = load_imitation_learning_network(inputs[0], inputs[1],
+        networkTensor, featureTensor = load_imitation_learning_network(inputs[0], inputs[1],
                                                         shape[1:3], dropoutVec,scopeName1,scopeName2)
 
         trainVars = tf.trainable_variables()
@@ -48,7 +48,8 @@ def controlNet(inputs, targets, shape, dropoutVec, branchConfig, params, scopeNa
         tensors = {
             'optimizers': contSolver,
             'losses': loss,
-            'output': networkTensor
+            'output': networkTensor,
+            'features': featureTensor,
         }
     return tensors
 

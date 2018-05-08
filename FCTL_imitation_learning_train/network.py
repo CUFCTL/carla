@@ -159,8 +159,10 @@ def load_imitation_learning_network(input_image, input_data, input_size, dropout
         print(x)
         """ fc2 """
         x = network_manager.fc_block(x, 512)
-    
 
+        # x = x / tf.norm(x, 2, axis=1) # normed
+
+    cnn_feature = x
 
     with tf.variable_scope(scopeName2) as scope:
 
@@ -192,4 +194,4 @@ def load_imitation_learning_network(input_image, input_data, input_size, dropout
 
             print(branch_output)
 
-    return branches
+    return branches, cnn_feature
