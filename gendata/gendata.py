@@ -11,6 +11,8 @@ import logging
 
 from carla.driving_benchmark import run_driving_benchmark
 from carla.driving_benchmark.experiment_suites.fctl_2018 import Fctl2018
+from carla.driving_benchmark.experiment_suites.fctl_2018_t import Fctl2018T
+from carla.driving_benchmark.experiment_suites.fctl_2018_s import Fctl2018S
 from carla.agent.auto_pilot_agent050 import AutoPilotAgent050
 from carla.agent.auto_pilot_agent025 import AutoPilotAgent025
 
@@ -63,6 +65,17 @@ if __name__ == '__main__':
         help='Generate Data'
     )
     argparser.add_argument(
+        '-t', '--times',
+        metavar='T',
+        type=int,
+        default=10,
+        help='benchmark times')
+    argparser.add_argument(
+        '-e', '--experiment',
+        metavar='E',
+        default='CS',
+        help='CS: Curve + Straight, C: Curve, S:Straight')
+    argparser.add_argument(
         '--continue-experiment',
         action='store_true',
         help='If you want to continue the experiment with the same name'
@@ -84,9 +97,14 @@ if __name__ == '__main__':
     else:
         agent = AutoPilotAgent025()
 
-    experiment_suite = Fctl2018(args.city_name)
+    if args.experiment == 'C':
+        corl = Fctl2018T(args.city_name, args.times)
+    elif args.experiment == 'S':
+        corl = Fctl2018S(args.city_name, args.times)
+    else:
+        corl = Fctl2018(args.city_name, args.times)
 
     # Now actually run the driving_benchmark
-    run_driving_benchmark(agent, experiment_suite, args.city_name,
+    run_driving_benchmark(agent, corl, args.city_name,
                           args.log_name, args.continue_experiment,
                           args.host, args.port, args.gd)

@@ -10,7 +10,7 @@ class Fctl2018(ExperimentSuite):
     def __init__(self, city_name, times):
         self.times = times
         super(Fctl2018, self).__init__(city_name)
-        
+
 
     @property
     def train_weathers(self):

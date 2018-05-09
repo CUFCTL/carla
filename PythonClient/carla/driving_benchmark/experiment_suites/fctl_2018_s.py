@@ -8,8 +8,8 @@ from carla.driving_benchmark.experiment_suites.experiment_suite import Experimen
 
 class Fctl2018S(ExperimentSuite):
     def __init__(self, city_name, times):
-        ExperimentSuite.__init__(self, city_name=city_name)
         self.times = times
+        super(Fctl2018S, self).__init__(city_name)
 
     @property
     def train_weathers(self):
