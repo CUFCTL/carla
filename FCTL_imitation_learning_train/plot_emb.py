@@ -1,6 +1,5 @@
 import tensorflow as tf
 from tensorflow.core.protobuf import saver_pb2
-import glob
 import h5py
 
 from conet import Net
@@ -9,6 +8,8 @@ import matplotlib
 import matplotlib.pyplot as plt
 from matplotlib import offsetbox
 from sklearn import (manifold, datasets, decomposition, ensemble, discriminant_analysis, random_projection)
+import fnmatch
+import os
 
 matplotlib.use('Agg')
 
@@ -41,7 +42,17 @@ timeNumberFrames = 1  # 4 # number of frames in each samples
 trainScratch = True
 
 datasetDirVal = './dataset/SeqVal/'
-datasetFilesVal = glob.glob(datasetDirVal + '*.h5')
+
+datasetFilesVal = []
+for root, dirnames, filenames in os.walk(datasetDirVal):
+    for filename in fnmatch.filter(filenames, '*.h5'):
+        datasetFilesVal.append(os.path.join(root, filename))
+
+count = 0
+for h5file in datasetFilesVal:
+    with h5py.File(h5file, 'r') as h5data:
+        count += h5data['rgb'].shape[0]
+print("Total image:", count)
 
 memory_fraction = 0.25
 image_cut = [115, 510]
@@ -88,11 +99,14 @@ for h5file in datasetFilesVal:
     feature = sess.run(netTensors['output']['features'], feedDict)
     features = np.concatenate((features, feature), axis=0)
 
+# with h5py.File('features.h5') as h5write:
+#     h5write['feature'] = features
+
 # lables1 = np.ones([321], dtype=np.float32) * 1
 # lables2 = np.ones([100], dtype=np.float32) * 2
 # lables3 = np.ones([414], dtype=np.float32) * 3
 # lables  = np.concatenate((lables1, lables2, lables3), axis=0)
 
-lables = np.ones([features.shape[0]], dtype=np.float32) * 1
+lables = np.ones([features.shape[0]], dtype=np.int) * 1
 
-plot_embedding(features, lables, "Town02_Test_CH")
+plot_embedding(features, lables, "Town02_CSL_5w")
