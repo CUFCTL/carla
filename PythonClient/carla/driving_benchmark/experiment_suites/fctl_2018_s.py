@@ -6,7 +6,7 @@ from carla.settings import CarlaSettings
 from carla.driving_benchmark.experiment_suites.experiment_suite import ExperimentSuite
 
 
-class Fctl2018T(ExperimentSuite):
+class Fctl2018S(ExperimentSuite):
     def __init__(self, city_name, times):
         ExperimentSuite.__init__(self, city_name=city_name)
         self.times = times
@@ -36,7 +36,7 @@ class Fctl2018T(ExperimentSuite):
         def _poses_one_curve():
             return [[48, 35], [99, 31], [104, 82], [83, 101], [67, 77]]
 
-        return [_poses_one_curve()] * self.times
+        return [_poses_straight()] * self.times
 
     def _poses_town02(self):
 
@@ -47,7 +47,7 @@ class Fctl2018T(ExperimentSuite):
         def _poses_one_curve():
             return [[57, 82], [1, 56], [70, 66], [44, 0], [52, 77], [78, 53]]
 
-        return [_poses_one_curve()] * self.times
+        return [_poses_straight()] * self.times
 
     def build_experiments(self):
         """

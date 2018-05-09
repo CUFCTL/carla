@@ -7,6 +7,10 @@ from carla.driving_benchmark.experiment_suites.experiment_suite import Experimen
 
 
 class Fctl2018(ExperimentSuite):
+    def __init__(self, city_name, times):
+        self.times = times
+        super(Fctl2018, self).__init__(city_name)
+        
 
     @property
     def train_weathers(self):
@@ -33,7 +37,7 @@ class Fctl2018(ExperimentSuite):
         def _poses_one_curve():
             return [[48, 35], [99, 31], [104, 82], [83, 101], [67, 77]]
 
-        return [_poses_straight()] * 10
+        return [_poses_straight(), _poses_one_curve()] * self.times
 
     def _poses_town02(self):
 
@@ -44,7 +48,7 @@ class Fctl2018(ExperimentSuite):
         def _poses_one_curve():
             return [[57, 82], [1, 56], [70, 66], [44, 0], [52, 77], [78, 53]]
 
-        return [_poses_straight()] * 10
+        return [_poses_straight(), _poses_one_curve()] * self.times
 
     def build_experiments(self):
         """

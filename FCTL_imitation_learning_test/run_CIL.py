@@ -4,6 +4,7 @@ import logging
 from carla.driving_benchmark import run_driving_benchmark
 from carla.driving_benchmark.experiment_suites.fctl_2018 import Fctl2018
 from carla.driving_benchmark.experiment_suites.fctl_2018_t import Fctl2018T
+from carla.driving_benchmark.experiment_suites.fctl_2018_s import Fctl2018S
 from agents.imitation.imitation_learning import ImitationLearning
 
 try:
@@ -42,7 +43,17 @@ if (__name__ == '__main__'):
         default='test',
         help='The name of the log file to be created by the scripts'
     )
-
+    argparser.add_argument(
+        '-e', '--experiment',
+        metavar='E',
+        default='CS',
+        help='CS: Curve + Straight, C: Curve, S:Straight')
+    argparser.add_argument(
+        '-t', '--times',
+        metavar='T',
+        type=int,
+        default=10,
+        help='benchmark times')
     argparser.add_argument(
         '--avoid-stopping',
         default=True,
@@ -64,7 +75,12 @@ if (__name__ == '__main__'):
 
     agent = ImitationLearning(args.city_name, args.avoid_stopping)
 
-    corl = Fctl2018(args.city_name)
+    if args.experiment == 'C':
+        corl = Fctl2018T(args.city_name, args.times)
+    elif args.experiment == 'S':
+        corl = Fctl2018S(args.city_name, args.times)
+    else:
+        corl = Fctl2018(args.city_name, args.times)
 
     # Now actually run the driving_benchmark
     run_driving_benchmark(agent, corl, args.city_name,
