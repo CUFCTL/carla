@@ -88,6 +88,11 @@ for h5file in datasetFilesVal:
     feature = sess.run(netTensors['output']['features'], feedDict)
     features = np.concatenate((features, feature), axis=0)
 
-lables = np.ones([features.shape[0]], dtype=np.float32) * 0.5
+# lables1 = np.ones([321], dtype=np.float32) * 1
+# lables2 = np.ones([100], dtype=np.float32) * 2
+# lables3 = np.ones([414], dtype=np.float32) * 3
+# lables  = np.concatenate((lables1, lables2, lables3), axis=0)
 
-plot_embedding(features, lables, "Test")
+lables = np.ones([features.shape[0]], dtype=np.float32) * 1
+
+plot_embedding(features, lables, "Town02_Test_CH")
