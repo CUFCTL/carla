@@ -118,7 +118,7 @@ class Network(object):
         return self._features
 
 
-def load_imitation_learning_network(input_image, input_data, input_size, dropout,scopeName1,scopeName2):
+def load_imitation_learning_network(input_image, input_data, input_size, dropout, scopeName1, scopeName2, mapping):
     branches = []
 
     x = input_image
@@ -160,6 +160,8 @@ def load_imitation_learning_network(input_image, input_data, input_size, dropout
         print(x)
         """ fc2 """
         x = network_manager.fc_block(x, 512)
+
+    x = tf.matmul(x, mapping)
 
     """Process Control"""
     with tf.variable_scope(scopeName2) as scope:

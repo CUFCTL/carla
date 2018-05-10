@@ -6,6 +6,7 @@ import scipy
 
 import tensorflow as tf
 import numpy as np
+import h5py
 
 slim = tf.contrib.slim
 
@@ -23,6 +24,16 @@ class ImitationLearning(Agent):
         scopeName = 'NET'
         scopeName1 = 'First'
         scopeName2 = 'Second'
+
+        import os
+        dir_path = os.path.dirname(__file__)
+
+        self._models_path_t1 = dir_path + '/model/Town01_CSL/'
+        self._models_path_t2 = dir_path + '/model/Town02_CSL/'
+        self._models_path_mapping = dir_path + '/model/mapping.h5'
+
+        with h5py.File(self._models_path_mapping, 'r') as h5data:
+            self._mapping = tf.constant(np.array(h5data['mapping']))
 
         self.dropout_vec = [1.0] * 8 + [0.7] * 2 + [0.5] * 2 + [0.5] * 1 + [0.5, 1.] * 2
 
@@ -49,12 +60,7 @@ class ImitationLearning(Agent):
 
         with tf.variable_scope(scopeName) as scope:
             self._network_tensor = load_imitation_learning_network(self._input_images, self._input_data,
-                                                                   self._image_size, self._dout,scopeName1,scopeName2)
-
-        import os
-        dir_path = os.path.dirname(__file__)
-
-        self._models_path = dir_path + '/model/test/'
+                                                                   self._image_size, self._dout,scopeName1,scopeName2, self._mapping)
 
         # tf.reset_default_graph()
         self._sess.run(tf.global_variables_initializer())
@@ -65,21 +71,30 @@ class ImitationLearning(Agent):
 
     def load_model(self):
 
-        variables_to_restore = tf.global_variables()
+        # variables_to_restore = tf.global_variables()
+        cnn_restore = [v for v in tf.global_variables() if v.name.split('/')[1] == 'First' or v.name.split('/')[2] == 'First']
+        policy_restore = [v for v in tf.global_variables() if v.name.split('/')[1] == 'Second' or v.name.split('/')[2] == 'Second']
 
-        saver = tf.train.Saver(variables_to_restore, max_to_keep=0)
+        saver_cnn = tf.train.Saver(cnn_restore, max_to_keep=0)
+        saver_policy = tf.train.Saver(policy_restore, max_to_keep=0)
 
-        if not os.path.exists(self._models_path):
+        if not os.path.exists(self._models_path_t1) or not os.path.exists(self._models_path_t2):
             raise RuntimeError('failed to find the models path')
 
-        ckpt = tf.train.get_checkpoint_state(self._models_path)
-        if ckpt:
-            print('Restoring from ', ckpt.model_checkpoint_path)
-            saver.restore(self._sess, ckpt.model_checkpoint_path)
-        else:
-            ckpt = 0
+        ckpt_t1 = tf.train.get_checkpoint_state(self._models_path_t1)
+        ckpt_t2 = tf.train.get_checkpoint_state(self._models_path_t2)
 
-        return ckpt
+        if ckpt_t1 and ckpt_t2:
+            print('Restoring from ', ckpt_t1.model_checkpoint_path)
+            print('Restoring from ', ckpt_t1.model_checkpoint_path)
+            saver_cnn.restore(self._sess, ckpt_t1.model_checkpoint_path)
+            saver_policy.restore(self._sess, ckpt_t2.model_checkpoint_path)
+
+        else:
+            ckpt_t1 = 0
+            ckpt_t2 = 0
+
+        return ckpt_t1, ckpt_t2
 
     def run_step(self, measurements, sensor_data, directions, target):
 

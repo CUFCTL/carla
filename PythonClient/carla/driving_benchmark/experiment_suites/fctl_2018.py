@@ -69,12 +69,12 @@ class Fctl2018(ExperimentSuite):
 
         if self._city_name == 'Town01':
             poses_tasks = self._poses_town01()
-            vehicles_tasks = [0] * 10
-            pedestrians_tasks = [0] * 10
+            vehicles_tasks = [0] * 2 * self.times
+            pedestrians_tasks = [0] * 2 * self.times
         else:
             poses_tasks = self._poses_town02()
-            vehicles_tasks = [0] * 10
-            pedestrians_tasks = [0] * 10
+            vehicles_tasks = [0] * 2 * self.times
+            pedestrians_tasks = [0] * 2 * self.times
 
         experiments_vector = []
 
