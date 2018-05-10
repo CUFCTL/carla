@@ -96,7 +96,7 @@ with sessGraph.as_default():
         # merge all summaries into a single op
         merged_summary_op = tf.summary.merge_all()
 
-        saver = tf.train.Saver(write_version=saver_pb2.SaverDef.V2)
+        saver = tf.train.Saver(write_version=saver_pb2.SaverDef.V2,max_to_keep=None)
         if not (trainScratch):
             saver.restore(sess, "test/model.ckpt")  # restore trained parameters
 
@@ -176,6 +176,9 @@ with sessGraph.as_default():
                     filename = saver.save(sess, checkpoint_path)
                     print("  Model saved in file: %s" % filename)
 
+                if steps % 10000 == 0:
+                    filename = saver.save(sess,'test/model.ckpt',global_step=steps)
+                    print("  Model saved in file: %s" % filename)
 
                 if steps % itername == 0 and steps != 0:
                     # finish the training
