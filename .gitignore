@@ -8,9 +8,9 @@ gendata/data/
 FCTL_imitation_learning_train/logs/
 FCTL_imitation_learning_train/test/
 FCTL_imitation_learning_test/_benchmarks_results/
-FCTL_imitation_learning_test_old/
 FCTL_imitation_learning_test/agents/imitation/model/
-
+FCTL_muse_test/_benchmarks_results/
+FCTL_muse_test/agents/imitation/model/
 *.h5
 *.png
 
