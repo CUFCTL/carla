@@ -52,14 +52,18 @@ genh5 = True
 save_image = True
 timeNumberFrames = 1
 trainScratch = True
-datasetDir = [
-    '../dataset/RawData/Town01_56/Town01_C_LN/',
-    '../dataset/RawData/Town01_56/Town01_S_LN/'
-]
-gen_features_name = 'features.h5'
-tsne_title = 'Town01_CSL_5w'
+town_name = 'Town01'
+weatherID = '56'
 batch_size = 800
 data_size = 50000
+
+datasetDir = [
+    '../dataset/RawData/' + town_name + '_' + weatherID + '/' + town_name + '_CL/',
+    '../dataset/RawData/' + town_name + '_' + weatherID + '/' + town_name + '_SL/'
+]
+model_path = '../dataset/Models/' + town_name + '_' + weatherID + '/train_CSL/'
+gen_features_name = town_name + '_' + weatherID + '_CSL_img_features.h5'
+tsne_title = town_name + '_' + weatherID + '_CSL_1k'
 
 datasetFilesVal = []
 for dir_path in datasetDir:
@@ -104,7 +108,7 @@ print('Initialize Variables in the Graph ...')
 sess.run(tf.global_variables_initializer())  # initialize variables
 
 saver = tf.train.Saver(write_version=saver_pb2.SaverDef.V2)
-saver.restore(sess, 'test/model.ckpt')  # restore trained parameters
+saver.restore(sess, model_path + 'test/model.ckpt')  # restore trained parameters
 
 if genh5:
     with h5py.File(gen_features_name, 'w') as h5write:
@@ -119,13 +123,15 @@ if data_size % batch_size == 0:
 else:
     iter_list = [batch_size] * int(data_size / batch_size) + [data_size % batch_size]
 
+old_prog = 0
+progress = 0
 for size in iter_list:
     imgs = build_batch(datasetFilesVal, size)
     xs = np.multiply(imgs.astype(np.float32), 1.0 / 255.0)
     feedDict = {netTensors['inputs'][0]: xs, netTensors['dropoutVec']: [1] * len(dropoutVec)}
     feature = sess.run(netTensors['output']['features'], feedDict)
     if genh5:
-        with h5py.File('features.h5', 'a') as h5write:
+        with h5py.File(gen_features_name, 'a') as h5write:
             if save_image:
                 h5write['rgb'].resize(h5write['rgb'].shape[0] + imgs.shape[0], axis=0)
                 h5write['rgb'][-imgs.shape[0]:] = imgs
@@ -133,6 +139,12 @@ for size in iter_list:
             h5write['feature'][-imgs.shape[0]:] = feature
     else:
         features = np.concatenate((features, feature), axis=0)
+
+    progress += size
+    if progress != old_prog:
+        print "Progress:", int(float(progress)/data_size * 100)
+        old_prog = progress
+
 
 if not genh5:
     # lables1 = np.ones([321], dtype=np.float32) * 1
