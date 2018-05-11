@@ -52,7 +52,7 @@ for trainH5Name in datasetFilesTrain:
 
 # Configurations
 num_images = trainCount
-itername = 100000
+itername = 300000
 memory_fraction = 0.25
 image_cut = [115, 510]
 dropoutVec = [1.0] * 8 + [0.7] * 2 + [0.5] * 2 + [0.5] * 1 + [0.5, 1.] * 2
