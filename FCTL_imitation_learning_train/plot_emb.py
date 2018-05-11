@@ -14,6 +14,18 @@ import os
 matplotlib.use('Agg')
 
 
+def build_batch(file_lists, number):
+    img_array = np.empty((0, 88, 200, 3), dtype=np.uint8)
+    for _ in range(number):
+        id_file = np.random.randint(len(file_lists) - 1)
+        with h5py.File(file_lists[id_file], 'r') as h5read:
+            id_img = np.random.randint(h5read['rgb'].shape[0] - 1)
+            img = np.expand_dims(h5read['rgb'][id_img], axis=0)
+            img_array = np.concatenate((img_array, img), axis=0)
+
+    return img_array
+
+
 def plot_embedding(X, y, title=None):
     tsne = manifold.TSNE(n_components=2, init='pca', random_state=0)
     X_tsne = tsne.fit_transform(X)
@@ -36,17 +48,24 @@ def plot_embedding(X, y, title=None):
     plt.close(fig)
 
 
-# parameters
-timeNumberFrames = 1  # 4 # number of frames in each samples
-
+genh5 = True
+save_image = True
+timeNumberFrames = 1
 trainScratch = True
-
-datasetDirVal = './dataset/SeqVal/'
+datasetDir = [
+    '../dataset/RawData/Town01_56/Town01_C_LN/',
+    '../dataset/RawData/Town01_56/Town01_S_LN/'
+]
+gen_features_name = 'features.h5'
+tsne_title = 'Town01_CSL_5w'
+batch_size = 800
+data_size = 50000
 
 datasetFilesVal = []
-for root, dirnames, filenames in os.walk(datasetDirVal):
-    for filename in fnmatch.filter(filenames, '*.h5'):
-        datasetFilesVal.append(os.path.join(root, filename))
+for dir_path in datasetDir:
+    for root, dirnames, filenames in os.walk(dir_path):
+        for filename in fnmatch.filter(filenames, '*.h5'):
+            datasetFilesVal.append(os.path.join(root, filename))
 
 count = 0
 for h5file in datasetFilesVal:
@@ -87,26 +106,40 @@ sess.run(tf.global_variables_initializer())  # initialize variables
 saver = tf.train.Saver(write_version=saver_pb2.SaverDef.V2)
 saver.restore(sess, 'test/model.ckpt')  # restore trained parameters
 
-features = np.empty((0, 512), dtype=np.float32)
+if genh5:
+    with h5py.File(gen_features_name, 'w') as h5write:
+        if save_image:
+            h5write.create_dataset('rgb', shape=(0, 88, 200, 3), dtype="uint8", maxshape=(None, 88, 200, 3), compression="gzip")
+        h5write.create_dataset('feature', shape=(0, 512), dtype="float32", maxshape=(None, 512), compression="gzip")
+else:
+    features = np.empty((0, 512), dtype=np.float32)
 
-for h5file in datasetFilesVal:
-    h5data = h5py.File(h5file, 'r')
-    count = h5data['rgb'].shape[0]
-    xs = h5data['rgb'][:count]
-    xs = xs.astype(np.float32)
-    xs = np.multiply(xs, 1.0 / 255.0)
+if data_size % batch_size == 0:
+    iter_list = [batch_size] * int(data_size / batch_size)
+else:
+    iter_list = [batch_size] * int(data_size / batch_size) + [data_size % batch_size]
+
+for size in iter_list:
+    imgs = build_batch(datasetFilesVal, size)
+    xs = np.multiply(imgs.astype(np.float32), 1.0 / 255.0)
     feedDict = {netTensors['inputs'][0]: xs, netTensors['dropoutVec']: [1] * len(dropoutVec)}
     feature = sess.run(netTensors['output']['features'], feedDict)
-    features = np.concatenate((features, feature), axis=0)
+    if genh5:
+        with h5py.File('features.h5', 'a') as h5write:
+            if save_image:
+                h5write['rgb'].resize(h5write['rgb'].shape[0] + imgs.shape[0], axis=0)
+                h5write['rgb'][-imgs.shape[0]:] = imgs
+            h5write['feature'].resize(h5write['feature'].shape[0] + feature.shape[0], axis=0)
+            h5write['feature'][-imgs.shape[0]:] = feature
+    else:
+        features = np.concatenate((features, feature), axis=0)
 
-# with h5py.File('features.h5') as h5write:
-#     h5write['feature'] = features
+if not genh5:
+    # lables1 = np.ones([321], dtype=np.float32) * 1
+    # lables2 = np.ones([100], dtype=np.float32) * 2
+    # lables3 = np.ones([414], dtype=np.float32) * 3
+    # lables  = np.concatenate((lables1, lables2, lables3), axis=0)
 
-# lables1 = np.ones([321], dtype=np.float32) * 1
-# lables2 = np.ones([100], dtype=np.float32) * 2
-# lables3 = np.ones([414], dtype=np.float32) * 3
-# lables  = np.concatenate((lables1, lables2, lables3), axis=0)
+    lables = np.ones([features.shape[0]], dtype=np.int) * 1
 
-lables = np.ones([features.shape[0]], dtype=np.int) * 1
-
-plot_embedding(features, lables, "Town02_CSL_5w")
+    plot_embedding(features, lables, tsne_title)
