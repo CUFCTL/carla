@@ -6,6 +6,7 @@ DataSet:
 |  Town02  |  Sunny  | Sunset |     89     |   Town02_89  |
 |  Town01  |  Sunny  | Sunset |     89     |   Town01_89  |
 |  Town01  |  Sunny  |  Noon  |     12     |   Town01_12  |
+|  Town02  |  Sunny  |  Noon  |     12     |   Town02_12  |
 
 Models:
 
