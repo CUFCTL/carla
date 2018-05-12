@@ -1,3 +1,4 @@
+# Python 2
 import tensorflow as tf
 from tensorflow.core.protobuf import saver_pb2
 import h5py
@@ -61,7 +62,7 @@ datasetDir = [
     '../dataset/RawData/' + town_name + '_' + weatherID + '/' + town_name + '_CL/',
     '../dataset/RawData/' + town_name + '_' + weatherID + '/' + town_name + '_SL/'
 ]
-model_path = '../dataset/Models/' + town_name + '_' + weatherID + '/train_CSL/'
+model_path = '../dataset/Models/' + town_name + '_' + weatherID + '/train_CSL/test/model.ckpt'
 gen_features_name = town_name + '_' + weatherID + '_CSL_img_features.h5'
 tsne_title = town_name + '_' + weatherID + '_CSL_1k'
 
@@ -75,7 +76,6 @@ count = 0
 for h5file in datasetFilesVal:
     with h5py.File(h5file, 'r') as h5data:
         count += h5data['rgb'].shape[0]
-print("Total image:", count)
 
 memory_fraction = 0.25
 image_cut = [115, 510]
@@ -108,7 +108,9 @@ print('Initialize Variables in the Graph ...')
 sess.run(tf.global_variables_initializer())  # initialize variables
 
 saver = tf.train.Saver(write_version=saver_pb2.SaverDef.V2)
-saver.restore(sess, model_path + 'test/model.ckpt')  # restore trained parameters
+saver.restore(sess, model_path)  # restore trained parameters
+
+print "Total image:", count
 
 if genh5:
     with h5py.File(gen_features_name, 'w') as h5write:
